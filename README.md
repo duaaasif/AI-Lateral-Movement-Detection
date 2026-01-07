@@ -236,10 +236,6 @@ Edit `src/ml/feature_engineering.py`:
 - Default: 10-minute windows (`dt.floor("10min")`)
 - Adjust based on your log volume and analysis needs
 
-### Work Hours
-Edit `src/ml/feature_engineering.py`:
-- Default: 06:00-18:00
-- Outside hours: 00:00-06:00 and 18:00-23:59
 
 ## Future Enhancements
 
@@ -252,26 +248,13 @@ Edit `src/ml/feature_engineering.py`:
 - [ ] Model retraining pipeline
 - [ ] Performance metrics dashboard
 
-## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## License
-
-[Add your license here]
 
 ## Acknowledgments
 
 - Isolation Forest algorithm from scikit-learn
 - Synthetic log generation for testing
 
-## Contact
-
-[Add contact information]
-
----
 
 **Note**: This system currently uses synthetic logs for development and testing. Replace with real log data for production use.
+
