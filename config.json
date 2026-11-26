@@ -1,0 +1,97 @@
+{
+  "paths": {
+    "raw_dir": "data/raw",
+    "processed_file": "data/processed/clean_logs.csv",
+    "ground_truth_file": "data/raw/ground_truth_campaigns.csv",
+    "features_file": "data/features/feature_table.csv",
+    "alerts_dir": "data/alerts",
+    "rule_alerts_file": "data/alerts/alerts.csv",
+    "ml_alerts_file": "data/alerts/ml_alerts.csv",
+    "gnn_alerts_file": "data/alerts/gnn_alerts.csv",
+    "sequence_alerts_file": "data/alerts/sequence_alerts.csv",
+    "all_alerts_file": "data/alerts/all_alerts.csv",
+    "user_risk_file": "data/alerts/user_risk_scores.csv",
+    "eval_report_file": "data/alerts/evaluation_report.json",
+    "visualizations_dir": "data/alerts/visualizations",
+    "models_dir": "models"
+  },
+  "features": {
+    "time_window": "10min",
+    "default_year": 2025,
+    "work_hours_start": 6,
+    "work_hours_end": 18,
+    "suspicious_processes": [
+      "powershell.exe",
+      "cmd.exe",
+      "wmic.exe",
+      "psexec.exe",
+      "net.exe",
+      "schtasks.exe",
+      "rundll32.exe",
+      "wscript.exe"
+    ],
+    "admin_share_keywords": [
+      "c$",
+      "admin$",
+      "ipc$",
+      "f$",
+      "net use",
+      "smb"
+    ],
+    "lateral_ports": [22, 135, 445, 3389, 5985]
+  },
+  "rules": {
+    "multi_host_window_minutes": 10,
+    "failed_login_burst_threshold": 3,
+    "failed_login_window_minutes": 10,
+    "sensitive_hosts": {
+      "hr01": ["sara", "hr_admin"],
+      "hr02": ["sara", "hr_admin"],
+      "finance01": ["ali", "fin_admin"],
+      "finance02": ["ali", "fin_admin"],
+      "dc01": ["admin_ops"],
+      "db01": ["dba_admin", "admin_ops"],
+      "linux-prod01": ["admin_ops", "eng_lead"],
+      "linux-db01": ["dba_admin", "admin_ops"]
+    },
+    "severities": {
+      "Multiple hosts in short time": 0.75,
+      "Login outside working hours": 0.55,
+      "Remote process creation": 0.70,
+      "Sensitive host access": 0.85,
+      "Failed login burst before success": 0.85,
+      "Admin share access": 0.80
+    }
+  },
+  "ml": {
+    "contamination": 0.02,
+    "random_state": 42,
+    "train_ratio": 0.7,
+    "max_svm_train_samples": 4000,
+    "max_ae_train_samples": 25000,
+    "autoencoder_epochs": 30,
+    "autoencoder_lr": 0.005,
+    "autoencoder_threshold_quantile": 0.985,
+    "gnn_epochs": 40,
+    "gnn_lr": 0.01,
+    "gnn_threshold_quantile": 0.985,
+    "sequence_length": 5,
+    "max_seq_train_samples": 20000,
+    "sequence_epochs": 25,
+    "sequence_lr": 0.005,
+    "sequence_threshold_quantile": 0.985
+  },
+  "ensemble": {
+    "weights": {
+      "Rule-based": 0.35,
+      "ML": 0.25,
+      "GNN": 0.20,
+      "Sequence": 0.20
+    },
+    "risk_thresholds": {
+      "CRITICAL": 75,
+      "HIGH": 55,
+      "MEDIUM": 35
+    }
+  }
+}

@@ -1,0 +1,29 @@
+# Python / Virtual Environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Generated Raw Logs, Splits, Processed Data, Alerts & Charts
+data/raw/*.log
+data/raw/*.jsonl
+data/raw/*.csv
+data/upload_samples/
+data/session_uploads/
+data/processed/
+data/features/
+data/splits/
+data/alerts/
+
+# Trained Model Weights
+models/*.joblib
+models/*.pt
+
+# OS / Editor
+desktop.ini
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/

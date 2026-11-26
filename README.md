@@ -1,260 +1,136 @@
-# AI-Lateral-Movement-Detection
+# AI-Lateral-Movement-Detection (AegisLM)
 
-AI-powered lateral movement detection system for early threat detection using both rule-based and machine learning approaches.
+AI-powered lateral movement detection system for **Windows** and **Linux** enterprise logs, combining rule-based heuristics, tabular unsupervised ML (`IsolationForest`, `OneClassSVM`, PyTorch `TabularAutoencoder`), Graph Neural Networks (`GraphSAGE` via PyTorch Geometric), and LSTM sequence modeling (`SequenceLSTMAutoencoder`), served through a clean **Upload → Train/Test Split → Results & Graphs** Web GUI.
 
-## Overview
-
-This project implements a comprehensive lateral movement detection system that:
-- Ingests and normalizes security logs
-- Extracts behavioral features from user activity
-- Detects anomalies using both rule-based and ML-based methods
-- Merges and visualizes alerts for security analysis
+---
 
 ## Project Structure
 
 ```
 AI-Lateral-Movement-Detection/
-├── data/
-│   ├── raw/                    # Raw synthetic logs
-│   ├── processed/              # Cleaned and normalized logs
-│   ├── features/               # Feature engineering output
-│   └── alerts/                 # Detection alerts
-│       └── visualizations/     # Generated charts and graphs
+├── app.py                                      # Single-command Web GUI launcher (http://127.0.0.1:8080)
+├── start_gui.bat                               # Windows double-click / CMD launcher
+├── config.json                                 # Unified paths, rules, feature, ML, and ensemble config
+├── run_pipeline.py                             # End-to-end CLI & session pipeline (with Train/Test split)
+├── requirements.txt                            # Python dependencies
 ├── src/
-│   ├── ingestion/              # Log ingestion scripts
-│   ├── ml/                     # Feature engineering
-│   ├── detection/              # Detection algorithms
-│   │   ├── rule_based_detection.py
-│   │   ├── ml_detection.py
-│   │   └── merge_alerts.py
-│   └── utils/                  # Utility scripts
-│       └── visualize_alerts.py
-├── notebooks/                  # Jupyter notebooks (optional)
-├── docs/                       # Project documentation
-├── tests/                      # Unit tests
-├── run_pipeline.py             # End-to-end pipeline script
-└── requirements.txt            # Python dependencies
+│   ├── config.py                               # Central configuration loader
+│   ├── ingestion/
+│   │   ├── generate_synthetic_logs.py          # 1M+ Windows + Linux raw .log generator + sample bundles
+│   │   └── log_ingestion.py                    # Streaming multi-format parser (.log/.jsonl/.csv -> clean_logs.csv)
+│   ├── ml/
+│   │   ├── graph_features.py                   # Vectorized NetworkX User-Host bipartite graph features
+│   │   └── feature_engineering.py              # 17 behavioral, identity, host & graph features per 10-min window
+│   ├── detection/
+│   │   ├── rule_based_detection.py             # 6 config-driven vectorized detection rules
+│   │   ├── ml_detection.py                     # IsolationForest + OneClassSVM + PyTorch Autoencoder
+│   │   ├── gnn_detection.py                    # PyTorch Geometric GraphSAGE bipartite detector
+│   │   ├── sequence_detection.py               # PyTorch LSTM sequence autoencoder
+│   │   └── merge_alerts.py                     # Multi-detector alert merging & ensemble risk scoring (0-100)
+│   ├── api/
+│   │   ├── scoring_server.py                   # Real-time event scoring engine & /score endpoint
+│   │   └── web_server.py                       # Session-based Web GUI server, streaming upload & job runner
+│   ├── ui/
+│   │   ├── index.html                          # Executive Daylight UI (Light / Dark / System themes)
+│   │   ├── styles.css                          # Light & pure-black Dark theme styles
+│   │   └── app.js                              # Upload -> Split -> Results & Graphs frontend logic
+│   └── utils/
+│       ├── logger.py                           # Structured logging
+│       ├── evaluate.py                         # Precision, Recall, F1, ROC-AUC, PR-AUC evaluation
+│       └── visualize_alerts.py                 # Generates 7 alert & risk PNG charts
+├── docs/                                       # Project documentation
+└── tests/
+    └── test_pipeline.py                        # Unit, integration, and GUI endpoint tests
 ```
 
-## Features
+---
 
-### Detection Methods
+## Supported Raw Log Categories (Windows + Linux)
 
-1. **Rule-Based Detection** (`rule_based_detection.py`)
-   - Multiple hosts accessed in short time (10 minutes)
-   - Login outside working hours (00:00-06:00)
-   - Remote process creation (powershell.exe, cmd.exe)
-   - Sensitive host access by uncommon users
+The parser (`src/ingestion/log_ingestion.py`) automatically detects both Windows EVTX/Winlogbeat JSON lines and Linux RFC3164/RFC5424 syslog lines inside `.log` files:
 
-2. **ML-Based Detection** (`ml_detection.py`)
-   - Uses Isolation Forest algorithm
-   - Detects anomalies based on behavioral patterns
-   - Enhanced with 6 features for better detection
+### Windows Logs
+- **Security** (`windows_security.log`): `4624` (Logon), `4625` (Failed Logon), `4648`, `4672` (Special Privileges), `4688` (Process Creation), `4698` (Scheduled Task), `4768`/`4769` (Kerberos), `5140` (Network Share Access)
+- **PowerShell, WinRM & CMD** (`windows_powershell_cmd.log`): PowerShell Operational (`4103`, `4104`), WinRM Operational (`6`, `91`), CMD command execution
+- **RDP / Terminal Services** (`windows_rdp.log`): RemoteConnectionManager (`1149`) & LocalSessionManager (`21`, `24`)
+- **System & Application** (`windows_system_app.log`): Service Control Manager (`7036`, `7045` including `PSEXESVC`) & Application (`1000`, `1001`, `1022`)
 
-### Feature Engineering
+### Linux Logs
+- **Auth Logs** (`linux_auth.log`): `/var/log/auth.log` (`sshd` Accepted/Failed, `sudo`, `su`, `pam_unix`, `xrdp-sesman`)
+- **Syslog & Auditd** (`linux_syslog_audit.log`): `/var/log/syslog` & `auditd` (`systemd`, `CRON`, `auditd EXECVE`)
 
-The system extracts the following features per user per 10-minute time window:
+---
 
-1. **action_count**: Total number of actions/events
-2. **unique_hosts**: Number of unique hosts accessed
-3. **suspicious_process_count**: Count of suspicious processes executed
-4. **num_source_ips**: Number of unique source IPs
-5. **num_unique_commands**: Number of unique commands executed
-6. **outside_work_hours**: Binary indicator (1 if activity outside 06:00-18:00)
+## Detection Architecture
 
-## Installation
+1. **Train / Test Split (`run_pipeline.py`)**:
+   - Uploaded or raw logs are normalized chronologically and split into **Train** (default `70%`) and **Test** (`30%`) with zero data leakage.
+   - AI models train strictly on the **Train** split and detect/evaluate strictly on the **Test** split.
+2. **17 Engineered Features per `(user, 10min)` Window**:
+   - `action_count`, `unique_hosts`, `suspicious_process_count`, `num_source_ips`, `num_unique_commands`, `outside_work_hours`, `failed_login_count`, `failed_then_success`, `new_host_count`, `admin_share_count`, `sensitive_host_count`, `unique_event_ids`, `user_degree`, `user_pagerank`, `user_betweenness`, `min_dist_to_sensitive`, `new_edge_ratio`.
+3. **4 Independent Detectors + Ensemble Scoring**:
+   - **Rule-Based (`rule_based_detection.py`)**: Multiple hosts in short time, login outside working hours (`06:00–18:00`), remote/suspicious process creation, unauthorized sensitive host access, failed login burst before success, admin share / SMB access.
+   - **Tabular ML (`ml_detection.py`)**: `RobustScaler` + `IsolationForest` + `OneClassSVM` + PyTorch `TabularAutoencoder` (persisted in `models/`).
+   - **Graph Neural Network (`gnn_detection.py`)**: 2-layer `SAGEConv` autoencoder over the User-Host bipartite graph.
+   - **Sequence Model (`sequence_detection.py`)**: PyTorch `LSTM` autoencoder over per-user chronological event sequences.
+   - **Ensemble Risk Score (`merge_alerts.py`)**: Combines detector severities and multi-detector agreement into a `0–100` risk score and priority (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`).
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd AI-Lateral-Movement-Detection
-```
+---
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+## Installation & Setup
 
-Required packages:
-- pandas
-- numpy
-- scikit-learn
-- matplotlib
-- networkx (for future graph-based features)
+1. **Clone and create a virtual environment (Python 3.11–3.13 recommended)**:
+   ```powershell
+   git clone https://github.com/duaaasif/AI-Lateral-Movement-Detection.git
+   cd AI-Lateral-Movement-Detection
+   python -m venv .venv
+   .\.venv\Scripts\python.exe -m pip install --upgrade pip
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+   ```
 
-## Usage
+2. **Generate 1,050,000+ raw Windows + Linux `.log` files & upload-ready samples**:
+   ```powershell
+   .\.venv\Scripts\python.exe src/ingestion/generate_synthetic_logs.py --total-events 1050000 --days 30
+   ```
+   This creates:
+   - `data/raw/*.log` (`1,050,000+` Windows & Linux events)
+   - `data/upload_samples/*.log` (convenient browser-uploadable `.log` samples: `combined_windows_linux_sample.log`, `windows_all_channels_sample.log`, `linux_all_logs_sample.log`)
 
-### Quick Start - Run Complete Pipeline
+---
 
-Run the end-to-end pipeline:
-```bash
-python run_pipeline.py
-```
+## Running & Testing via the Web GUI
 
-This will execute:
-1. Feature Engineering
-2. ML Detection
-3. Rule-Based Detection (if not already done)
-4. Merge Alerts
+1. **Start the GUI** (from CMD or PowerShell):
+   ```powershell
+   .\.venv\Scripts\python.exe app.py
+   ```
+   *(Or double-click `start_gui.bat`.)*  
+   Your browser opens at `http://127.0.0.1:8080` with a **clean session** (no stale pre-processed results).
 
-### Step-by-Step Execution
+2. **GUI Workflow**:
+   - **Theme**: Switch between **Light (Executive Daylight)**, **Dark (pure black)**, or **System** in the top-right.
+   - **1. Upload & Split**: Drag & drop raw `.log` file(s) (e.g., from `data/upload_samples/` or `data/raw/`), choose your Train/Test split ratio (`50%–90%`) and strategy, then click **Split Data & Run Lateral Movement Analysis**.
+   - **2. Results & Graphs** *(opens automatically after completion)*: View Train/Test split summary, Test KPIs (`Precision`, `Recall`, `F1`, `ROC-AUC`), 7 generated visualization charts, prioritized threat windows, and the filterable alert feed.
+   - **3. Log Explorer**: Preview raw uploaded `.log` lines and search normalized parsed events.
+   - **4. Live Threat Tester**: Test real-time scoring (`POST /score`) with built-in attack presets or custom JSON events.
+   - **5. System Tests**: Run the automated `unittest` suite directly inside the GUI.
+   - **New Analysis (Reset)**: Clears the active session back to a clean upload state.
 
-#### 1. Log Ingestion
-```bash
-python src/ingestion/log_ingestion.py
-```
-- Input: `data/raw/synthetic_logs.csv`
-- Output: `data/processed/clean_logs.csv`
-- Normalizes timestamps and extracts relevant fields
+---
 
-#### 2. Feature Engineering
-```bash
-python src/ml/feature_engineering.py
-```
-- Input: `data/processed/clean_logs.csv`
-- Output: `data/features/feature_table.csv`
-- Generates 6 features per user per 10-minute window
+## CLI Usage & Automated Tests
 
-#### 3. ML Detection
-```bash
-python src/detection/ml_detection.py
-```
-- Input: `data/features/feature_table.csv`
-- Output: `data/alerts/ml_alerts.csv`
-- Trains Isolation Forest and generates anomaly alerts
+- **Run the unit & integration test suite**:
+  ```powershell
+  .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+  ```
 
-#### 4. Rule-Based Detection
-```bash
-python src/detection/rule_based_detection.py
-```
-- Input: `data/processed/clean_logs.csv`
-- Output: `data/alerts/alerts.csv`
-- Applies hard-coded rules for known attack patterns
+- **Run the full 1M+ pipeline via CLI (with 70/30 Train/Test split)**:
+  ```powershell
+  .\.venv\Scripts\python.exe run_pipeline.py --generate-data --total-events 1050000 --days 30
+  ```
 
-#### 5. Merge Alerts
-```bash
-python src/detection/merge_alerts.py
-```
-- Input: `data/alerts/ml_alerts.csv` + `data/alerts/alerts.csv`
-- Output: `data/alerts/all_alerts.csv`
-- Combines and sorts all alerts by time window
-
-#### 6. Visualize Alerts
-```bash
-python src/utils/visualize_alerts.py
-```
-- Input: `data/alerts/all_alerts.csv`
-- Output: `data/alerts/visualizations/*.png`
-- Generates 6 visualization charts:
-  - Alerts per user
-  - Alerts per host
-  - Alerts over time
-  - Alert type distribution
-  - ML vs Rule-based comparison
-  - User activity timeline
-
-## Output Files
-
-### Data Files
-- `data/processed/clean_logs.csv`: Normalized log data
-- `data/features/feature_table.csv`: Engineered features
-- `data/alerts/ml_alerts.csv`: ML-based anomaly alerts
-- `data/alerts/alerts.csv`: Rule-based alerts
-- `data/alerts/all_alerts.csv`: Merged alerts (sorted by time)
-
-### Visualizations
-All charts are saved in `data/alerts/visualizations/`:
-- `alerts_per_user.png`
-- `alerts_per_host.png`
-- `alerts_over_time.png`
-- `alert_type_distribution.png`
-- `ml_vs_rule_based.png`
-- `user_activity_timeline.png`
-
-## Detection Rules
-
-### Rule-Based Detection
-
-1. **Multiple Hosts in Short Time**
-   - Triggers when a user accesses different hosts within 10 minutes
-   - Indicates potential lateral movement
-
-2. **Login Outside Working Hours**
-   - Detects logins between 00:00-06:00
-   - Unusual activity pattern
-
-3. **Remote Process Creation**
-   - Flags execution of suspicious processes:
-     - powershell.exe
-     - cmd.exe
-   - Common in lateral movement attacks
-
-4. **Sensitive Host Access**
-   - Detects access to sensitive hosts by unauthorized users
-   - Example: Finance user accessing HR servers
-
-### ML-Based Detection
-
-- Uses **Isolation Forest** algorithm
-- Contamination rate: 15% (configurable)
-- Detects anomalies based on:
-  - Unusual action patterns
-  - Abnormal host access patterns
-  - Suspicious process execution frequency
-  - Multiple source IPs
-  - Command diversity
-  - Off-hours activity
-
-## Example Output
-
-```
-Total Alerts: 6
-
-By User:
-ali     3
-sara    3
-
-By Alert Type:
-Remote process creation         3
-Multiple hosts in short time    2
-ML anomaly                      1
-
-By Detection Method:
-Rule-based    5
-ML            1
-```
-
-## Configuration
-
-### ML Model Parameters
-Edit `src/detection/ml_detection.py`:
-- `contamination=0.15`: Expected proportion of anomalies
-- `random_state=42`: For reproducibility
-
-### Time Window
-Edit `src/ml/feature_engineering.py`:
-- Default: 10-minute windows (`dt.floor("10min")`)
-- Adjust based on your log volume and analysis needs
-
-
-## Future Enhancements
-
-- [ ] Graph-based detection using networkx
-- [ ] Real-time log streaming
-- [ ] Alert prioritization and scoring
-- [ ] Integration with SIEM systems
-- [ ] User behavior profiling
-- [ ] Automated response actions
-- [ ] Model retraining pipeline
-- [ ] Performance metrics dashboard
-
-
-
-## Acknowledgments
-
-- Isolation Forest algorithm from scikit-learn
-- Synthetic log generation for testing
-
-
-**Note**: This system currently uses synthetic logs for development and testing. Replace with real log data for production use.
-
+- **Run inference on existing `data/raw/` logs using persisted models**:
+  ```powershell
+  .\.venv\Scripts\python.exe run_pipeline.py --no-retrain
+  ```
