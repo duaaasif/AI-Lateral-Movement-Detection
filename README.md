@@ -64,7 +64,7 @@ The parser (`src/ingestion/log_ingestion.py`) automatically detects both Windows
 ## Detection Architecture
 
 1. **Train / Test Split (`run_pipeline.py`)**:
-   - Uploaded or raw logs are normalized chronologically and split into **Train** (default `70%`) and **Test** (`30%`) with zero data leakage.
+   - Uploaded or raw logs are ordered by time and split along **10-minute window boundaries** into **Train** (default `70%` of earlier windows) and **Test** (`30%` of later windows) with zero data leakage.
    - AI models train strictly on the **Train** split and detect/evaluate strictly on the **Test** split.
 2. **17 Engineered Features per `(user, 10min)` Window**:
    - `action_count`, `unique_hosts`, `suspicious_process_count`, `num_source_ips`, `num_unique_commands`, `outside_work_hours`, `failed_login_count`, `failed_then_success`, `new_host_count`, `admin_share_count`, `sensitive_host_count`, `unique_event_ids`, `user_degree`, `user_pagerank`, `user_betweenness`, `min_dist_to_sensitive`, `new_edge_ratio`.
@@ -109,7 +109,7 @@ The parser (`src/ingestion/log_ingestion.py`) automatically detects both Windows
 
 2. **GUI Workflow**:
    - **Theme**: Switch between **Light (Executive Daylight)**, **Dark (pure black)**, or **System** in the top-right.
-   - **1. Upload & Split**: Drag & drop raw `.log` file(s) (e.g., from `data/upload_samples/` or `data/raw/`), choose your Train/Test split ratio (`50%–90%`) and strategy, then click **Split Data & Run Lateral Movement Analysis**.
+   - **1. Upload & Split**: Drag & drop raw `.log` file(s) (e.g., from `data/upload_samples/` or `data/raw/`), choose your Train/Test split ratio (`50%–90%`, split cleanly on 10-minute window boundaries), then click **Split Data & Run Lateral Movement Analysis**.
    - **2. Results & Graphs** *(opens automatically after completion)*: View Train/Test split summary, Test KPIs (`Precision`, `Recall`, `F1`, `ROC-AUC`), 7 generated visualization charts, prioritized threat windows, and the filterable alert feed.
    - **3. Log Explorer**: Preview raw uploaded `.log` lines and search normalized parsed events.
    - **4. Live Threat Tester**: Test real-time scoring (`POST /score`) with built-in attack presets or custom JSON events.

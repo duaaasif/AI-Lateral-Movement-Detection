@@ -135,7 +135,6 @@ def train_and_predict_ml(
     ml_cfg = cfg["ml"]
     seed = int(ml_cfg["random_state"])
     contamination = float(ml_cfg["contamination"])
-    train_ratio = float(ml_cfg.get("train_ratio", 0.7))
     max_svm = int(ml_cfg.get("max_svm_train_samples", 4000))
     max_ae = int(ml_cfg.get("max_ae_train_samples", 25000))
 
@@ -176,12 +175,9 @@ def train_and_predict_ml(
         ae_model.eval()
     else:
         logger.info("Training ML ensemble (IsolationForest + OneClassSVM + Autoencoder) on %d rows x %d features", len(X_raw), len(feature_cols))
-        split_idx = int(len(X_raw) * train_ratio) if len(X_raw) >= 20 else len(X_raw)
-        split_idx = max(split_idx, min(len(X_raw), 4))
-
         scaler = RobustScaler()
-        X_train = scaler.fit_transform(X_raw[:split_idx])
-        X_scaled = scaler.transform(X_raw)
+        X_train = scaler.fit_transform(X_raw)
+        X_scaled = X_train
 
         X_train_if = _subsample_rows(X_train, max_ae, seed)
         iso_forest = IsolationForest(contamination=contamination, random_state=seed, n_jobs=-1)

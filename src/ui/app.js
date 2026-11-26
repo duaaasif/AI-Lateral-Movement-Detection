@@ -257,7 +257,7 @@ document.getElementById("btn-start-analysis").onclick = async () => {
     activeJobKind = "analysis";
     await apiPost("/api/pipeline/analyze", {
       train_ratio: Number(ratioSlider.value) / 100.0,
-      split_mode: document.getElementById("inp-split-mode").value,
+      split_mode: "window",
     });
     if (!jobPollTimer) jobPollTimer = setInterval(pollJob, 800);
     await pollJob();
@@ -316,7 +316,7 @@ async function loadResults() {
   document.getElementById("res-test-split").textContent = `${fmtNum(sp.test_events)} events / ${fmtNum(sp.test_windows)} windows`;
   document.getElementById("res-test-range").textContent = sp.test_start ? `${sp.test_start} to ${sp.test_end}` : "Evaluated test set";
   document.getElementById("res-windows").textContent = fmtNum(data.feature_windows_count);
-  document.getElementById("res-split-mode").textContent = `${sp.split_mode || "chronological"} (${Math.round((sp.train_ratio || 0.7) * 100)}/${Math.round((1 - (sp.train_ratio || 0.7)) * 100)})`;
+  document.getElementById("res-split-mode").textContent = `10-min window split (${Math.round((sp.train_ratio || 0.7) * 100)}/${Math.round((1 - (sp.train_ratio || 0.7)) * 100)})`;
 
   document.getElementById("kpi-alerts").textContent = fmtNum(data.alert_summary.total);
   const critCount = (data.risk_scores || []).filter((r) => r.priority === "CRITICAL").length;

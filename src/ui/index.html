@@ -125,13 +125,10 @@
               </div>
             </div>
 
-            <label class="field" style="margin-top: 14px;">
+            <div class="field" style="margin-top: 14px;">
               <span>Split Strategy</span>
-              <select id="inp-split-mode" class="input">
-                <option value="chronological">Chronological Split (Train on earlier baseline, Detect on later logs)</option>
-                <option value="window">10-Min Window Boundary Split</option>
-              </select>
-            </label>
+              <div class="input" style="font-weight: 600;">10-Min Window Boundary Split (Train on earlier windows, Detect on later windows)</div>
+            </div>
 
             <div class="pipeline-info-box">
               <div class="info-item"><strong>1. Parse:</strong> Raw Windows/Linux <code>.log</code> &#8594; readable normalized events</div>

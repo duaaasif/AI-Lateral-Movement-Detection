@@ -283,11 +283,12 @@ class TestLateralMovementPipeline(unittest.TestCase):
                 self.assertEqual(up_res["saved"], "uploaded_mixed.log")
                 self.assertEqual(len(up_res["uploaded_files"]), 1)
 
-            # 3. Run Train/Test split pipeline on uploaded directory
+            # 3. Run 10-min window Train/Test split pipeline on uploaded directory
             summary = run_pipeline(raw_dir=session_dir, train_ratio=0.6, use_train_test_split=True)
             session.mark_results_ready(True)
-            self.assertEqual(summary["split"]["train_events"], 3)
-            self.assertEqual(summary["split"]["test_events"], 2)
+            self.assertEqual(summary["split"]["split_mode"], "window")
+            self.assertEqual(summary["split"]["train_events"], 2)
+            self.assertEqual(summary["split"]["test_events"], 3)
             self.assertGreater(summary["total_merged_alerts"], 0)
 
             with urlopen(f"{base}/api/overview") as r:

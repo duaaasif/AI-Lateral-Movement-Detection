@@ -487,9 +487,7 @@ def make_web_handler(
                         self._send_json(400, {"error": "Please upload at least one raw .log file first."})
                         return
                     train_ratio = float(data.get("train_ratio", 0.70))
-                    split_mode = str(data.get("split_mode", "chronological"))
-                    if split_mode not in ("chronological", "window"):
-                        split_mode = "chronological"
+                    split_mode = "window"
 
                     session.mark_results_ready(False)
                     cmd = [

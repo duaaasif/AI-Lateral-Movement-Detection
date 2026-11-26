@@ -32,10 +32,10 @@ def split_clean_logs(
     clean_df: pd.DataFrame,
     splits_dir: str,
     train_ratio: float = 0.70,
-    split_mode: str = "chronological",
+    split_mode: str = "window",
     time_window: str = "10min",
 ) -> Dict[str, Any]:
-    """Split parsed logs into Train and Test CSVs with zero test leakage."""
+    """Split parsed logs into Train and Test CSVs along 10-minute window boundaries."""
     os.makedirs(splits_dir, exist_ok=True)
     train_path = os.path.join(splits_dir, "train_logs.csv")
     test_path = os.path.join(splits_dir, "test_logs.csv")
@@ -44,7 +44,7 @@ def split_clean_logs(
         clean_df.to_csv(train_path, index=False)
         clean_df.to_csv(test_path, index=False)
         return {
-            "split_mode": split_mode,
+            "split_mode": "window",
             "train_ratio": train_ratio,
             "total_events": 0,
             "train_events": 0,
@@ -58,17 +58,17 @@ def split_clean_logs(
     df = df.sort_values("timestamp").reset_index(drop=True)
     train_ratio = min(max(float(train_ratio), 0.1), 0.95)
 
-    if split_mode == "window":
-        df["_tw"] = df["timestamp"].dt.floor(time_window)
-        unique_tws = sorted(df["_tw"].unique())
+    df["_tw"] = df["timestamp"].dt.floor(time_window)
+    unique_tws = sorted(df["_tw"].unique())
+    if len(unique_tws) >= 2:
         cut = max(1, min(len(unique_tws) - 1, int(len(unique_tws) * train_ratio)))
         train_tws = set(unique_tws[:cut])
         train_df = df[df["_tw"].isin(train_tws)].drop(columns=["_tw"])
         test_df = df[~df["_tw"].isin(train_tws)].drop(columns=["_tw"])
     else:
         split_idx = max(1, min(len(df) - 1, int(len(df) * train_ratio)))
-        train_df = df.iloc[:split_idx]
-        test_df = df.iloc[split_idx:]
+        train_df = df.iloc[:split_idx].drop(columns=["_tw"])
+        test_df = df.iloc[split_idx:].drop(columns=["_tw"])
 
     if test_df.empty:
         test_df = train_df.copy()
@@ -111,7 +111,7 @@ def run_pipeline(
     skip_eval: bool = False,
     raw_dir: str | None = None,
     train_ratio: float = 0.70,
-    split_mode: str = "chronological",
+    split_mode: str = "window",
     use_train_test_split: bool = True,
 ) -> Dict:
     """Execute ingestion, Train/Test split, model training on Train, detection on Test, eval, and charts."""
@@ -233,7 +233,7 @@ def main() -> int:
     parser.add_argument("--days", type=int, default=30, help="Days to span when --generate-data is set")
     parser.add_argument("--raw-dir", default=None, help="Optional custom raw log directory")
     parser.add_argument("--train-ratio", type=float, default=0.70, help="Train split ratio (default: 0.70)")
-    parser.add_argument("--split-mode", choices=["chronological", "window"], default="chronological")
+    parser.add_argument("--split-mode", choices=["window"], default="window")
     parser.add_argument("--no-split", action="store_true", help="Disable Train/Test split")
     parser.add_argument("--no-retrain", action="store_true", help="Use saved models instead of retraining")
     parser.add_argument("--skip-viz", action="store_true", help="Skip chart generation")
