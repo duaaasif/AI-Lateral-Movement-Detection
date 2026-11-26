@@ -1,4 +1,4 @@
-"""Lightweight local real-time HTTP scoring API (no SIEM dependencies)."""
+"""Lightweight local real-time HTTP scoring API (Rules + Isolation Forest)."""
 
 import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -10,14 +10,12 @@ from typing import Any, Dict, List
 import joblib
 import numpy as np
 import pandas as pd
-import torch
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.config import load_config
-from src.detection.ml_detection import TabularAutoencoder
 from src.detection.rule_based_detection import evaluate_rules
 from src.ml.graph_features import extract_graph_features
 from src.utils.logger import get_logger
@@ -26,7 +24,7 @@ logger = get_logger("scoring_server")
 
 
 def score_events(events: List[Dict[str, Any]], cfg: Dict[str, Any] | None = None) -> Dict[str, Any]:
-    """Score a batch of raw log event dicts using rules and persisted ML models."""
+    """Score a batch of raw log event dicts using rules and persisted Isolation Forest."""
     cfg = cfg or load_config()
     if not events:
         return {"event_count": 0, "alerts": [], "max_risk_score": 0.0, "priority": "LOW"}
@@ -68,19 +66,16 @@ def score_events(events: List[Dict[str, Any]], cfg: Dict[str, Any] | None = None
             "details": r["details"],
         })
 
-    # 2. Persisted ML model scoring (if trained artifacts exist)
+    # 2. Persisted Isolation Forest scoring (if trained model exists)
     models_dir = cfg["paths"]["models_dir"]
     bundle_path = os.path.join(models_dir, "ml_bundle.joblib")
-    ae_path = os.path.join(models_dir, "ae_model.pt")
     ml_max_score = 0.0
 
-    if os.path.exists(bundle_path) and os.path.exists(ae_path):
+    if os.path.exists(bundle_path):
         bundle = joblib.load(bundle_path)
         scaler = bundle["scaler"]
         iso_forest = bundle["iso_forest"]
-        oc_svm = bundle["oc_svm"]
         feature_cols = bundle["feature_cols"]
-        ae_threshold = bundle["ae_threshold"]
 
         feat_cfg = cfg["features"]
         tw = feat_cfg["time_window"]
@@ -102,9 +97,6 @@ def score_events(events: List[Dict[str, Any]], cfg: Dict[str, Any] | None = None
         work["is_sens"] = work["host_lower"].isin(sens_hosts).astype(int)
 
         graph_df = extract_graph_features(work, time_window=tw, sensitive_hosts=sens_hosts)
-        ae_model = TabularAutoencoder(len(feature_cols))
-        ae_model.load_state_dict(torch.load(ae_path, map_location="cpu", weights_only=True))
-        ae_model.eval()
 
         for (user, tw_val), grp in work.groupby(["user", "time_window"]):
             g_match = graph_df[(graph_df["user"] == user) & (graph_df["time_window"] == tw_val)]
@@ -130,16 +122,11 @@ def score_events(events: List[Dict[str, Any]], cfg: Dict[str, Any] | None = None
             }
             vec = np.array([[row_feats.get(c, 0.0) for c in feature_cols]], dtype=np.float32)
             vec_scaled = scaler.transform(vec)
-            if_flag = int(iso_forest.predict(vec_scaled)[0] == -1)
-            svm_flag = int(oc_svm.predict(vec_scaled)[0] == -1)
-            with torch.no_grad():
-                t_v = torch.tensor(vec_scaled, dtype=torch.float32)
-                mse = float(torch.mean((ae_model(t_v) - t_v) ** 2).item())
-            ae_flag = int(mse > ae_threshold)
-            votes = if_flag + svm_flag + ae_flag
-            ml_sev = round(min(1.0, votes / 3.0), 4)
-            ml_max_score = max(ml_max_score, ml_sev)
-            if votes >= 2:
+            pred = int(iso_forest.predict(vec_scaled)[0])
+            dec = float(iso_forest.decision_function(vec_scaled)[0])
+            if pred == -1:
+                ml_sev = round(min(1.0, max(0.45, 0.5 - dec)), 4)
+                ml_max_score = max(ml_max_score, ml_sev)
                 alerts.append({
                     "source": "ML",
                     "timestamp": str(tw_val),
@@ -147,7 +134,7 @@ def score_events(events: List[Dict[str, Any]], cfg: Dict[str, Any] | None = None
                     "host": "",
                     "alert_type": "ML anomaly",
                     "severity": ml_sev,
-                    "details": f"Ensemble votes={votes}/3, ae_mse={mse:.4f}",
+                    "details": f"IsolationForest decision_function={dec:.4f}",
                 })
 
     max_rule_sev = max([a["severity"] for a in alerts if a["source"] == "Rule-based"], default=0.0)

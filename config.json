@@ -7,8 +7,6 @@
     "alerts_dir": "data/alerts",
     "rule_alerts_file": "data/alerts/alerts.csv",
     "ml_alerts_file": "data/alerts/ml_alerts.csv",
-    "gnn_alerts_file": "data/alerts/gnn_alerts.csv",
-    "sequence_alerts_file": "data/alerts/sequence_alerts.csv",
     "all_alerts_file": "data/alerts/all_alerts.csv",
     "user_risk_file": "data/alerts/user_risk_scores.csv",
     "eval_report_file": "data/alerts/evaluation_report.json",
@@ -64,29 +62,14 @@
     }
   },
   "ml": {
-    "contamination": 0.02,
+    "contamination": 0.0005,
     "random_state": 42,
-    "train_ratio": 0.7,
-    "max_svm_train_samples": 4000,
-    "max_ae_train_samples": 25000,
-    "autoencoder_epochs": 30,
-    "autoencoder_lr": 0.005,
-    "autoencoder_threshold_quantile": 0.985,
-    "gnn_epochs": 40,
-    "gnn_lr": 0.01,
-    "gnn_threshold_quantile": 0.985,
-    "sequence_length": 5,
-    "max_seq_train_samples": 20000,
-    "sequence_epochs": 25,
-    "sequence_lr": 0.005,
-    "sequence_threshold_quantile": 0.985
+    "max_if_train_samples": 50000
   },
   "ensemble": {
     "weights": {
-      "Rule-based": 0.35,
-      "ML": 0.25,
-      "GNN": 0.20,
-      "Sequence": 0.20
+      "Rule-based": 0.55,
+      "ML": 0.45
     },
     "risk_thresholds": {
       "CRITICAL": 75,

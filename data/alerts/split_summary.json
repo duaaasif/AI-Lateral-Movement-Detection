@@ -1,15 +1,6 @@
 {
-  "split_mode": "chronological",
-  "train_ratio": 0.7,
-  "total_events": 1050250,
-  "train_events": 735175,
-  "test_events": 315075,
-  "train_start": "2025-11-01 07:00:00",
-  "train_end": "2025-11-22 07:03:08",
-  "test_start": "2025-11-22 07:03:09",
-  "test_end": "2025-11-30 21:16:22",
-  "train_path": "C:\\Users\\DELL\\OneDrive\\Desktop\\AI-For-CY\\project\\data\\splits\\train_logs.csv",
-  "test_path": "C:\\Users\\DELL\\OneDrive\\Desktop\\AI-For-CY\\project\\data\\splits\\test_logs.csv",
-  "train_windows": 164413,
-  "test_windows": 70450
+  "split_mode": "none",
+  "total_events": 60134,
+  "evaluated_events": 60134,
+  "feature_windows": 53054
 }

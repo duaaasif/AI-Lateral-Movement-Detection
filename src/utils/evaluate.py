@@ -95,7 +95,7 @@ def evaluate_detections(cfg: Dict[str, Any] | None = None) -> Dict[str, Any]:
     }
 
     if not alerts_df.empty:
-        for src in ["Rule-based", "ML", "GNN", "Sequence"]:
+        for src in ["Rule-based", "ML"]:
             src_wins = set(
                 zip(
                     alerts_df[alerts_df["source"] == src]["user"],

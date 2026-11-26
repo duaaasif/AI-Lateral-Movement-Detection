@@ -13,11 +13,9 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.config import load_config
-from src.detection.gnn_detection import run_gnn_detection
 from src.detection.merge_alerts import merge_and_score_alerts
 from src.detection.ml_detection import train_and_predict_ml
 from src.detection.rule_based_detection import run_rule_detection
-from src.detection.sequence_detection import run_sequence_detection
 from src.ingestion.generate_synthetic_logs import generate_raw_dataset
 from src.ingestion.log_ingestion import ingest_logs
 from src.ml.feature_engineering import build_features
@@ -160,33 +158,32 @@ def run_pipeline(
             json.dump(split_info, f, indent=2)
 
         if retrain:
-            logger.info("[Step 4] Training ML, GNN & Sequence Models on TRAIN Split")
+            logger.info("[Step 4] Training Isolation Forest on TRAIN Split")
             train_and_predict_ml(feature_csv=train_feat_path, alert_file=os.path.join(splits_dir, "_train_ml_alerts.csv"), retrain=True)
-            run_gnn_detection(clean_logs_path=train_logs_path, output_file=os.path.join(splits_dir, "_train_gnn_alerts.csv"), retrain=True)
-            run_sequence_detection(clean_logs_path=train_logs_path, output_file=os.path.join(splits_dir, "_train_seq_alerts.csv"), retrain=True)
 
-        logger.info("[Step 5] Detecting Lateral Movement on TEST Split")
+        logger.info("[Step 5] Detecting Lateral Movement on TEST Split (Rules + Isolation Forest)")
         rule_df = run_rule_detection(clean_logs_path=test_logs_path)
         ml_df = train_and_predict_ml(feature_csv=test_feat_path, retrain=False)
-        gnn_df = run_gnn_detection(clean_logs_path=test_logs_path, retrain=False)
-        seq_df = run_sequence_detection(clean_logs_path=test_logs_path, retrain=False)
         feat_df = test_feat_df
     else:
         logger.info("[Step 2] Feature & Graph Engineering")
         feat_df = build_features()
-        split_info = {"split_mode": "none", "total_events": int(len(logs_df))}
+        split_info = {
+            "split_mode": "none",
+            "total_events": int(len(logs_df)),
+            "evaluated_events": int(len(logs_df)),
+            "feature_windows": int(len(feat_df)),
+        }
+        split_summary_path = os.path.join(cfg["paths"]["alerts_dir"], "split_summary.json")
+        os.makedirs(os.path.dirname(split_summary_path), exist_ok=True)
+        with open(split_summary_path, "w", encoding="utf-8") as f:
+            json.dump(split_info, f, indent=2)
 
         logger.info("[Step 3] Rule-Based Detection")
         rule_df = run_rule_detection()
 
-        logger.info("[Step 4] Tabular ML Detection")
+        logger.info("[Step 4] Isolation Forest ML Detection")
         ml_df = train_and_predict_ml(retrain=retrain)
-
-        logger.info("[Step 5] Graph Neural Network Detection")
-        gnn_df = run_gnn_detection(retrain=retrain)
-
-        logger.info("[Step 6] Sequence Detection")
-        seq_df = run_sequence_detection(retrain=retrain)
 
     logger.info("[Step 6] Alert Merging & Ensemble Risk Scoring")
     merged_df = merge_and_score_alerts(cfg)
@@ -207,20 +204,16 @@ def run_pipeline(
         "split": split_info,
         "rule_alerts": len(rule_df),
         "ml_alerts": len(ml_df),
-        "gnn_alerts": len(gnn_df),
-        "sequence_alerts": len(seq_df),
         "total_merged_alerts": len(merged_df),
         "charts_generated": charts_count,
         "evaluation": eval_report,
     }
     logger.info(
-        "Pipeline complete: %d events -> %d Test alerts (Rule=%d, ML=%d, GNN=%d, Seq=%d), %d charts",
+        "Pipeline complete: %d events -> %d Test alerts (Rule=%d, ML=%d), %d charts",
         summary["raw_events"],
         summary["total_merged_alerts"],
         summary["rule_alerts"],
         summary["ml_alerts"],
-        summary["gnn_alerts"],
-        summary["sequence_alerts"],
         summary["charts_generated"],
     )
     return summary

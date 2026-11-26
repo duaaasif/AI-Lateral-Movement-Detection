@@ -1,27 +1,4 @@
-const PRESETS = {
-  psexec: [
-    { timestamp: "2025-11-16 02:14:00", user: "ali", host: "host001", event_id: 4625, process_name: "-", command_line: "-", source_ip: "192.168.50.77" },
-    { timestamp: "2025-11-16 02:14:20", user: "ali", host: "host001", event_id: 4625, process_name: "-", command_line: "-", source_ip: "192.168.50.77" },
-    { timestamp: "2025-11-16 02:14:40", user: "ali", host: "host001", event_id: 4625, process_name: "-", command_line: "-", source_ip: "192.168.50.77" },
-    { timestamp: "2025-11-16 02:15:00", user: "ali", host: "hr01", event_id: 4688, process_name: "psexec.exe", command_line: "psexec \\\\hr01 cmd.exe /c net use \\\\hr01\\C$", source_ip: "10.0.0.5" },
-  ],
-  rdp: [
-    { timestamp: "2025-11-16 03:05:00", user: "sara", host: "finance01", event_id: 4624, process_name: "mstsc.exe", command_line: "rdp_session_44", source_ip: "10.0.0.8" },
-    { timestamp: "2025-11-16 03:06:00", user: "sara", host: "finance01", event_id: 4688, process_name: "powershell.exe", command_line: "Invoke-Command -ComputerName dc01 -ScriptBlock {whoami}", source_ip: "10.0.0.8" },
-  ],
-  linux: [
-    { timestamp: "2025-11-16 04:01:00", user: "omar", host: "linux-prod01", event_id: 4625, process_name: "sshd", command_line: "-", source_ip: "203.0.113.88" },
-    { timestamp: "2025-11-16 04:02:00", user: "omar", host: "linux-prod01", event_id: 4624, process_name: "sshd", command_line: "-", source_ip: "203.0.113.88" },
-    { timestamp: "2025-11-16 04:03:00", user: "omar", host: "linux-db01", event_id: 4688, process_name: "wmic.exe", command_line: "sudo cat /etc/shadow", source_ip: "10.0.0.12" },
-  ],
-  benign: [
-    { timestamp: "2025-11-16 10:15:00", user: "ali", host: "host001", event_id: 4624, process_name: "explorer.exe", command_line: "-", source_ip: "10.0.0.5" },
-    { timestamp: "2025-11-16 10:17:00", user: "ali", host: "host001", event_id: 4688, process_name: "excel.exe", command_line: "excel.exe q4_budget.xlsx", source_ip: "10.0.0.5" },
-  ],
-};
-
 let jobPollTimer = null;
-let activeJobKind = "";
 
 function esc(val) {
   return String(val ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -72,11 +49,9 @@ systemMedia.addEventListener("change", () => {
 
 // Tab navigation
 const TAB_TITLES = {
-  upload: ["Upload Raw Logs & Configure Split", "Upload raw Windows/Linux .log files, configure Train/Test split, and launch analysis."],
+  upload: ["Upload Raw Logs & Run Analysis", "Upload raw Windows/Linux .log files to automatically parse, split, train AI models, and inspect lateral movement graphs."],
   results: ["Detection Results & Visual Graphs", "Train/Test split summary, test-set lateral movement alerts, evaluation metrics, and generated charts."],
   logs: ["Raw & Parsed Log Explorer", "Inspect raw uploaded .log lines and query normalized parsed events."],
-  simulator: ["Live Real-Time Threat Tester", "Send synthetic or custom JSON events to the scoring engine (POST /score)."],
-  tests: ["Automated System Tests", "Run isolated unit and integration tests across parsers, models, and GUI endpoints."],
 };
 
 function switchTab(tabId) {
@@ -93,20 +68,6 @@ document.querySelectorAll(".nav-item").forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
 });
 document.getElementById("btn-go-upload").onclick = () => switchTab("upload");
-
-// Split slider visual
-const ratioSlider = document.getElementById("inp-train-ratio");
-function updateSplitVisual() {
-  const trainPct = Number(ratioSlider.value);
-  const testPct = 100 - trainPct;
-  document.getElementById("split-ratio-label").textContent = `${trainPct}% Train / ${testPct}% Test`;
-  document.getElementById("split-train-seg").style.width = `${trainPct}%`;
-  document.getElementById("split-train-seg").textContent = `Train (${trainPct}%)`;
-  document.getElementById("split-test-seg").style.width = `${testPct}%`;
-  document.getElementById("split-test-seg").textContent = `Test (${testPct}%)`;
-}
-ratioSlider.addEventListener("input", updateSplitVisual);
-updateSplitVisual();
 
 // Render uploaded files
 function renderUploadedFiles(files) {
@@ -199,16 +160,60 @@ dropzone.addEventListener("drop", (e) => {
   uploadFiles(e.dataTransfer.files);
 });
 
+// Execution mode switcher (Train & Test vs Direct Test Demo)
+const runModeSelect = document.getElementById("run-mode-select");
+function syncRunModeUI() {
+  const mode = runModeSelect ? runModeSelect.value : "train_and_test";
+  const descEl = document.getElementById("run-mode-desc");
+  const startBtn = document.getElementById("btn-start-analysis");
+  const stepper = document.getElementById("pipeline-stepper");
+
+  if (mode === "test_only") {
+    descEl.textContent = "Skips Train/Test splitting and model training; runs Fixed Rules + pre-trained Isolation Forest directly on all uploaded logs.";
+    startBtn.textContent = "Run Direct Test Analysis (Demo)";
+    stepper.innerHTML = `
+      <div class="step-chip" data-step="1">1. Parse Raw Logs</div>
+      <div class="step-chip" data-step="2">2. Feature &amp; Graph Eng.</div>
+      <div class="step-chip" data-step="3">3. Rules + Pre-trained ML</div>
+      <div class="step-chip" data-step="4">4. Build Graphs &amp; Eval</div>
+    `;
+  } else {
+    descEl.textContent = "Splits parsed logs 70/30 chronologically, trains Isolation Forest on Train, and detects lateral movement on Test.";
+    startBtn.textContent = "Run Lateral Movement Analysis";
+    stepper.innerHTML = `
+      <div class="step-chip" data-step="1">1. Parse Raw Logs</div>
+      <div class="step-chip" data-step="2">2. Train/Test Split</div>
+      <div class="step-chip" data-step="3">3. Feature &amp; Graph Eng.</div>
+      <div class="step-chip" data-step="4">4. Train AI on Train</div>
+      <div class="step-chip" data-step="5">5. Detect on Test</div>
+      <div class="step-chip" data-step="6">6. Build Graphs &amp; Eval</div>
+    `;
+  }
+}
+if (runModeSelect) {
+  runModeSelect.addEventListener("change", syncRunModeUI);
+  syncRunModeUI();
+}
+
 // Stepper update from logs
 function updateStepperFromLogs(logs, status) {
   const joined = (logs || []).join("\n");
+  const isDirectTest = joined.includes("--no-split") || (runModeSelect && runModeSelect.value === "test_only");
   let active = 0;
-  if (joined.includes("[Step 1]")) active = 1;
-  if (joined.includes("[Step 2]")) active = 2;
-  if (joined.includes("[Step 3]")) active = 3;
-  if (joined.includes("[Step 4]")) active = 4;
-  if (joined.includes("[Step 5]")) active = 5;
-  if (joined.includes("[Step 6]") || joined.includes("[Step 7]") || joined.includes("[Step 8]")) active = 6;
+
+  if (isDirectTest) {
+    if (joined.includes("[Step 1]")) active = 1;
+    if (joined.includes("[Step 2]")) active = 2;
+    if (joined.includes("[Step 3]") || joined.includes("[Step 4]")) active = 3;
+    if (joined.includes("[Step 6]") || joined.includes("[Step 7]") || joined.includes("[Step 8]")) active = 4;
+  } else {
+    if (joined.includes("[Step 1]")) active = 1;
+    if (joined.includes("[Step 2]")) active = 2;
+    if (joined.includes("[Step 3]")) active = 3;
+    if (joined.includes("[Step 4]")) active = 4;
+    if (joined.includes("[Step 5]")) active = 5;
+    if (joined.includes("[Step 6]") || joined.includes("[Step 7]") || joined.includes("[Step 8]")) active = 6;
+  }
 
   document.querySelectorAll(".step-chip").forEach((el) => {
     const s = Number(el.dataset.step);
@@ -225,24 +230,20 @@ function updateStepperFromLogs(logs, status) {
 
 async function pollJob() {
   const snap = await apiGet("/api/jobs/status");
-  if (activeJobKind === "tests") {
-    document.getElementById("test-terminal").textContent = (snap.logs || []).join("\n");
-  } else {
-    document.getElementById("job-status-badge").textContent = snap.status;
-    document.getElementById("sidebar-job-badge").textContent = `Job: ${snap.status}`;
-    document.getElementById("job-elapsed").textContent = snap.elapsed_seconds != null ? `${snap.elapsed_seconds}s` : "0.0s";
-    const term = document.getElementById("job-terminal");
-    if (snap.logs && snap.logs.length) {
-      term.textContent = snap.logs.join("\n");
-      term.scrollTop = term.scrollHeight;
-    }
-    updateStepperFromLogs(snap.logs, snap.status);
+  document.getElementById("job-status-badge").textContent = snap.status;
+  document.getElementById("sidebar-job-badge").textContent = `Job: ${snap.status}`;
+  document.getElementById("job-elapsed").textContent = snap.elapsed_seconds != null ? `${snap.elapsed_seconds}s` : "0.0s";
+  const term = document.getElementById("job-terminal");
+  if (snap.logs && snap.logs.length) {
+    term.textContent = snap.logs.join("\n");
+    term.scrollTop = term.scrollHeight;
   }
+  updateStepperFromLogs(snap.logs, snap.status);
 
   if (snap.status !== "running" && jobPollTimer) {
     clearInterval(jobPollTimer);
     jobPollTimer = null;
-    if (activeJobKind === "analysis" && snap.status === "completed") {
+    if (snap.status === "completed") {
       await loadResults();
       await loadAlerts();
       await queryParsedLogs();
@@ -254,22 +255,12 @@ async function pollJob() {
 
 document.getElementById("btn-start-analysis").onclick = async () => {
   try {
-    activeJobKind = "analysis";
+    const mode = runModeSelect ? runModeSelect.value : "train_and_test";
     await apiPost("/api/pipeline/analyze", {
-      train_ratio: Number(ratioSlider.value) / 100.0,
+      mode,
+      train_ratio: 0.70,
       split_mode: "window",
     });
-    if (!jobPollTimer) jobPollTimer = setInterval(pollJob, 800);
-    await pollJob();
-  } catch (err) {
-    alert(err.message);
-  }
-};
-
-document.getElementById("btn-run-tests").onclick = async () => {
-  try {
-    activeJobKind = "tests";
-    await apiPost("/api/tests/run", {});
     if (!jobPollTimer) jobPollTimer = setInterval(pollJob, 800);
     await pollJob();
   } catch (err) {
@@ -310,13 +301,29 @@ async function loadResults() {
   document.getElementById("session-badge").innerHTML = `<span class="pulse-dot"></span> Results Ready`;
 
   const sp = data.split || {};
-  document.getElementById("res-total-events").textContent = fmtNum(sp.total_events || data.parsed_events_count);
-  document.getElementById("res-train-split").textContent = `${fmtNum(sp.train_events)} events / ${fmtNum(sp.train_windows)} windows`;
-  document.getElementById("res-train-range").textContent = sp.train_start ? `${sp.train_start} to ${sp.train_end}` : "Baseline training set";
-  document.getElementById("res-test-split").textContent = `${fmtNum(sp.test_events)} events / ${fmtNum(sp.test_windows)} windows`;
-  document.getElementById("res-test-range").textContent = sp.test_start ? `${sp.test_start} to ${sp.test_end}` : "Evaluated test set";
-  document.getElementById("res-windows").textContent = fmtNum(data.feature_windows_count);
-  document.getElementById("res-split-mode").textContent = `10-min window split (${Math.round((sp.train_ratio || 0.7) * 100)}/${Math.round((1 - (sp.train_ratio || 0.7)) * 100)})`;
+  const totalEvents = sp.total_events || data.parsed_events_count || 0;
+  const isDirectTest = sp.split_mode === "none";
+
+  document.getElementById("res-total-events").textContent = fmtNum(totalEvents);
+  const trainCard = document.getElementById("res-train-card");
+  const testLabel = document.getElementById("res-test-label");
+
+  if (isDirectTest) {
+    trainCard.style.display = "none";
+    testLabel.textContent = "Analysis Mode";
+    document.getElementById("res-test-split").textContent = "Direct Test (No Split — Pre-trained Model)";
+    document.getElementById("kpi-alerts-label").textContent = "Alerts Triggered";
+    document.getElementById("risk-table-title").textContent = "Prioritized Threat Windows";
+    document.getElementById("alert-feed-title").textContent = "Merged Alert Feed";
+  } else {
+    trainCard.style.display = "";
+    testLabel.textContent = "Test Split";
+    document.getElementById("res-train-split").textContent = `${fmtNum(sp.train_events || 0)} / ${fmtNum(totalEvents)}`;
+    document.getElementById("res-test-split").textContent = `${fmtNum(sp.test_events || 0)} / ${fmtNum(totalEvents)}`;
+    document.getElementById("kpi-alerts-label").textContent = "Test Alerts Triggered";
+    document.getElementById("risk-table-title").textContent = "Prioritized Test Threat Windows";
+    document.getElementById("alert-feed-title").textContent = "Test-Set Merged Alert Feed";
+  }
 
   document.getElementById("kpi-alerts").textContent = fmtNum(data.alert_summary.total);
   const critCount = (data.risk_scores || []).filter((r) => r.priority === "CRITICAL").length;
@@ -367,13 +374,13 @@ async function loadResults() {
   // Detector breakdown
   const perDet = data.evaluation?.per_detector || {};
   const bySource = data.alert_summary.by_source || {};
-  document.getElementById("detector-breakdown").innerHTML = ["Rule-based", "ML", "GNN", "Sequence"]
+  document.getElementById("detector-breakdown").innerHTML = ["Rule-based", "ML"]
     .map((name) => {
       const cnt = bySource[name] || 0;
       const m = perDet[name];
       const statsText = m
         ? `TP:${m.tp} FP:${m.fp} FN:${m.fn} | P:${Number(m.precision).toFixed(2)} R:${Number(m.recall).toFixed(2)} F1:${Number(m.f1).toFixed(2)}`
-        : `${fmtNum(cnt)} alerts on Test split`;
+        : `${fmtNum(cnt)} ${isDirectTest ? "alerts" : "alerts on Test split"}`;
       const pct = m ? Math.round(Number(m.f1) * 100) : Math.min(100, cnt * 5);
       return `<div class="breakdown-row">
         <div class="breakdown-top">
@@ -441,35 +448,6 @@ async function queryParsedLogs() {
     .join("");
 }
 
-async function runSimulator() {
-  const verdictBadge = document.getElementById("sim-priority-badge");
-  try {
-    const events = JSON.parse(document.getElementById("sim-json").value);
-    const res = await apiPost("/score", { events });
-    document.getElementById("sim-risk-score").textContent = `${res.max_risk_score} / 100`;
-    document.getElementById("sim-risk-bar").style.width = `${Math.min(100, res.max_risk_score)}%`;
-    verdictBadge.textContent = res.priority;
-    verdictBadge.className = `badge badge-${res.priority}`;
-
-    document.getElementById("sim-alerts-body").innerHTML = (res.alerts || []).length
-      ? res.alerts
-          .map(
-            (a) => `<tr>
-              <td>${esc(a.source)}</td>
-              <td>${esc(a.alert_type)}</td>
-              <td><strong>${esc(a.user)}</strong></td>
-              <td class="mono">${esc(a.host || "—")}</td>
-              <td>${esc(a.severity)}</td>
-              <td class="mono">${esc(a.details)}</td>
-            </tr>`
-          )
-          .join("")
-      : `<tr><td colspan="6">No threats detected (Benign activity)</td></tr>`;
-  } catch (err) {
-    alert("Invalid JSON or scoring error: " + err.message);
-  }
-}
-
 window.openChartModal = (src) => {
   document.getElementById("modal-img").src = src;
   document.getElementById("chart-modal").classList.add("open");
@@ -480,16 +458,9 @@ document.getElementById("modal-close-bg").onclick = () => document.getElementByI
 document.getElementById("btn-apply-alert-filters").onclick = loadAlerts;
 document.getElementById("btn-preview-raw").onclick = previewRaw;
 document.getElementById("btn-query-parsed").onclick = queryParsedLogs;
-document.querySelectorAll(".preset-btn").forEach((btn) => {
-  btn.onclick = () => {
-    document.getElementById("sim-json").value = JSON.stringify(PRESETS[btn.dataset.preset], null, 2);
-  };
-});
-document.getElementById("btn-score-sim").onclick = runSimulator;
 
 // Clean startup init
 async function init() {
-  document.getElementById("sim-json").value = JSON.stringify(PRESETS.psexec, null, 2);
   const sess = await apiGet("/api/session");
   renderUploadedFiles(sess.uploaded_files || []);
   await loadResults();

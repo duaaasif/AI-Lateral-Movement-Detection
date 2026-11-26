@@ -1,6 +1,6 @@
 # AI-Lateral-Movement-Detection (AegisLM)
 
-AI-powered lateral movement detection system for **Windows** and **Linux** enterprise logs, combining rule-based heuristics, tabular unsupervised ML (`IsolationForest`, `OneClassSVM`, PyTorch `TabularAutoencoder`), Graph Neural Networks (`GraphSAGE` via PyTorch Geometric), and LSTM sequence modeling (`SequenceLSTMAutoencoder`), served through a clean **Upload → Train/Test Split → Results & Graphs** Web GUI.
+AI-powered lateral movement detection system for **Windows** and **Linux** enterprise logs, combining **fixed rule-based heuristics** and **Isolation Forest** anomaly detection, served through a clean **Upload → Train/Test Split → Results & Graphs** Web GUI.
 
 ---
 
@@ -10,7 +10,7 @@ AI-powered lateral movement detection system for **Windows** and **Linux** enter
 AI-Lateral-Movement-Detection/
 ├── app.py                                      # Single-command Web GUI launcher (http://127.0.0.1:8080)
 ├── start_gui.bat                               # Windows double-click / CMD launcher
-├── config.json                                 # Unified paths, rules, feature, ML, and ensemble config
+├── config.json                                 # Unified paths, rules, feature, IsolationForest, and ensemble config
 ├── run_pipeline.py                             # End-to-end CLI & session pipeline (with Train/Test split)
 ├── requirements.txt                            # Python dependencies
 ├── src/
@@ -23,17 +23,15 @@ AI-Lateral-Movement-Detection/
 │   │   └── feature_engineering.py              # 17 behavioral, identity, host & graph features per 10-min window
 │   ├── detection/
 │   │   ├── rule_based_detection.py             # 6 config-driven vectorized detection rules
-│   │   ├── ml_detection.py                     # IsolationForest + OneClassSVM + PyTorch Autoencoder
-│   │   ├── gnn_detection.py                    # PyTorch Geometric GraphSAGE bipartite detector
-│   │   ├── sequence_detection.py               # PyTorch LSTM sequence autoencoder
-│   │   └── merge_alerts.py                     # Multi-detector alert merging & ensemble risk scoring (0-100)
+│   │   ├── ml_detection.py                     # Isolation Forest anomaly detection
+│   │   └── merge_alerts.py                     # Rule + ML alert merging & ensemble risk scoring (0-100)
 │   ├── api/
 │   │   ├── scoring_server.py                   # Real-time event scoring engine & /score endpoint
 │   │   └── web_server.py                       # Session-based Web GUI server, streaming upload & job runner
 │   ├── ui/
 │   │   ├── index.html                          # Executive Daylight UI (Light / Dark / System themes)
 │   │   ├── styles.css                          # Light & pure-black Dark theme styles
-│   │   └── app.js                              # Upload -> Split -> Results & Graphs frontend logic
+│   │   └── app.js                              # Upload -> Run -> Results & Graphs frontend logic
 │   └── utils/
 │       ├── logger.py                           # Structured logging
 │       ├── evaluate.py                         # Precision, Recall, F1, ROC-AUC, PR-AUC evaluation
@@ -64,16 +62,14 @@ The parser (`src/ingestion/log_ingestion.py`) automatically detects both Windows
 ## Detection Architecture
 
 1. **Train / Test Split (`run_pipeline.py`)**:
-   - Uploaded or raw logs are ordered by time and split along **10-minute window boundaries** into **Train** (default `70%` of earlier windows) and **Test** (`30%` of later windows) with zero data leakage.
-   - AI models train strictly on the **Train** split and detect/evaluate strictly on the **Test** split.
+   - Uploaded or raw logs are ordered by time and split along **10-minute window boundaries** into **Train** (`70%` of earlier windows) and **Test** (`30%` of later windows) with zero data leakage.
+   - `IsolationForest` trains strictly on the **Train** split and detects/evaluates strictly on the **Test** split.
 2. **17 Engineered Features per `(user, 10min)` Window**:
    - `action_count`, `unique_hosts`, `suspicious_process_count`, `num_source_ips`, `num_unique_commands`, `outside_work_hours`, `failed_login_count`, `failed_then_success`, `new_host_count`, `admin_share_count`, `sensitive_host_count`, `unique_event_ids`, `user_degree`, `user_pagerank`, `user_betweenness`, `min_dist_to_sensitive`, `new_edge_ratio`.
-3. **4 Independent Detectors + Ensemble Scoring**:
+3. **2 Detection Engines + Ensemble Scoring**:
    - **Rule-Based (`rule_based_detection.py`)**: Multiple hosts in short time, login outside working hours (`06:00–18:00`), remote/suspicious process creation, unauthorized sensitive host access, failed login burst before success, admin share / SMB access.
-   - **Tabular ML (`ml_detection.py`)**: `RobustScaler` + `IsolationForest` + `OneClassSVM` + PyTorch `TabularAutoencoder` (persisted in `models/`).
-   - **Graph Neural Network (`gnn_detection.py`)**: 2-layer `SAGEConv` autoencoder over the User-Host bipartite graph.
-   - **Sequence Model (`sequence_detection.py`)**: PyTorch `LSTM` autoencoder over per-user chronological event sequences.
-   - **Ensemble Risk Score (`merge_alerts.py`)**: Combines detector severities and multi-detector agreement into a `0–100` risk score and priority (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`).
+   - **Isolation Forest (`ml_detection.py`)**: `RobustScaler` + `sklearn.ensemble.IsolationForest` persisted in `models/ml_bundle.joblib`.
+   - **Ensemble Risk Score (`merge_alerts.py`)**: Combines Rule-based and Isolation Forest severities into a `0–100` risk score and priority (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`).
 
 ---
 
@@ -109,11 +105,9 @@ The parser (`src/ingestion/log_ingestion.py`) automatically detects both Windows
 
 2. **GUI Workflow**:
    - **Theme**: Switch between **Light (Executive Daylight)**, **Dark (pure black)**, or **System** in the top-right.
-   - **1. Upload & Split**: Drag & drop raw `.log` file(s) (e.g., from `data/upload_samples/` or `data/raw/`), choose your Train/Test split ratio (`50%–90%`, split cleanly on 10-minute window boundaries), then click **Split Data & Run Lateral Movement Analysis**.
+   - **1. Upload & Run**: Drag & drop raw `.log` file(s) (e.g., from `data/upload_samples/` or `data/raw/`), then click **Run Lateral Movement Analysis** (Step 2 of the live pipeline automatically performs the 70/30 10-minute window Train/Test split).
    - **2. Results & Graphs** *(opens automatically after completion)*: View Train/Test split summary, Test KPIs (`Precision`, `Recall`, `F1`, `ROC-AUC`), 7 generated visualization charts, prioritized threat windows, and the filterable alert feed.
    - **3. Log Explorer**: Preview raw uploaded `.log` lines and search normalized parsed events.
-   - **4. Live Threat Tester**: Test real-time scoring (`POST /score`) with built-in attack presets or custom JSON events.
-   - **5. System Tests**: Run the automated `unittest` suite directly inside the GUI.
    - **New Analysis (Reset)**: Clears the active session back to a clean upload state.
 
 ---
@@ -125,12 +119,12 @@ The parser (`src/ingestion/log_ingestion.py`) automatically detects both Windows
   .\.venv\Scripts\python.exe -m unittest discover -s tests -v
   ```
 
-- **Run the full 1M+ pipeline via CLI (with 70/30 Train/Test split)**:
+- **Run the full 1M+ pipeline via CLI (with 70/30 10-min window Train/Test split)**:
   ```powershell
-  .\.venv\Scripts\python.exe run_pipeline.py --generate-data --total-events 1050000 --days 30
+  .\.venv\Scripts\python.exe run_pipeline.py
   ```
 
-- **Run inference on existing `data/raw/` logs using persisted models**:
+- **Run inference on existing `data/raw/` logs using persisted Isolation Forest**:
   ```powershell
   .\.venv\Scripts\python.exe run_pipeline.py --no-retrain
   ```

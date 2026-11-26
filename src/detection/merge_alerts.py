@@ -83,8 +83,6 @@ def merge_and_score_alerts(cfg: Dict[str, Any] | None = None) -> pd.DataFrame:
     parts: List[pd.DataFrame] = [
         _load_source_alerts(paths["ml_alerts_file"], "ML", time_window),
         _load_source_alerts(paths["rule_alerts_file"], "Rule-based", time_window),
-        _load_source_alerts(paths["gnn_alerts_file"], "GNN", time_window),
-        _load_source_alerts(paths["sequence_alerts_file"], "Sequence", time_window),
     ]
     non_empty = [p for p in parts if not p.empty]
 

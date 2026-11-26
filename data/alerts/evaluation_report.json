@@ -1,72 +1,52 @@
 {
   "status": "evaluated",
-  "total_windows": 70450,
-  "attack_windows": 9,
-  "benign_windows": 70441,
+  "total_windows": 53054,
+  "attack_windows": 11,
+  "benign_windows": 53043,
   "ensemble_at_medium_threshold": {
-    "tp": 9,
-    "fp": 0,
-    "tn": 70441,
-    "fn": 0,
-    "precision": 1.0,
-    "recall": 1.0,
-    "f1": 1.0,
+    "tp": 10,
+    "fp": 1,
+    "tn": 53042,
+    "fn": 1,
+    "precision": 0.9091,
+    "recall": 0.9091,
+    "f1": 0.9091,
     "accuracy": 1.0,
-    "roc_auc": 1.0,
-    "pr_auc": 1.0
+    "roc_auc": 0.9545,
+    "pr_auc": 0.9091
   },
   "any_detector_alert": {
-    "tp": 9,
-    "fp": 6,
-    "tn": 70435,
-    "fn": 0,
-    "precision": 0.6,
-    "recall": 1.0,
-    "f1": 0.75,
-    "accuracy": 0.9999,
-    "roc_auc": 1.0,
-    "pr_auc": 1.0
+    "tp": 10,
+    "fp": 33,
+    "tn": 53010,
+    "fn": 1,
+    "precision": 0.2326,
+    "recall": 0.9091,
+    "f1": 0.3704,
+    "accuracy": 0.9994,
+    "roc_auc": 0.9545,
+    "pr_auc": 0.9091
   },
   "per_detector": {
     "Rule-based": {
-      "tp": 9,
+      "tp": 10,
       "fp": 1,
-      "tn": 70440,
-      "fn": 0,
-      "precision": 0.9,
-      "recall": 1.0,
-      "f1": 0.9474,
+      "tn": 53042,
+      "fn": 1,
+      "precision": 0.9091,
+      "recall": 0.9091,
+      "f1": 0.9091,
       "accuracy": 1.0
     },
     "ML": {
       "tp": 9,
-      "fp": 0,
-      "tn": 70441,
-      "fn": 0,
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
-      "accuracy": 1.0
-    },
-    "GNN": {
-      "tp": 9,
-      "fp": 0,
-      "tn": 70441,
-      "fn": 0,
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
-      "accuracy": 1.0
-    },
-    "Sequence": {
-      "tp": 9,
-      "fp": 5,
-      "tn": 70436,
-      "fn": 0,
-      "precision": 0.6429,
-      "recall": 1.0,
-      "f1": 0.7826,
-      "accuracy": 0.9999
+      "fp": 32,
+      "tn": 53011,
+      "fn": 2,
+      "precision": 0.2195,
+      "recall": 0.8182,
+      "f1": 0.3462,
+      "accuracy": 0.9994
     }
   }
 }

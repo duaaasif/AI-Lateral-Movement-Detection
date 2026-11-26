@@ -123,7 +123,7 @@ def generate_visualizations(
     bars = ax.bar(source_counts.index.astype(str), source_counts.values, color=src_colors)
     ax.set_xlabel("Detection Method", fontsize=12, fontweight="bold")
     ax.set_ylabel("Number of Alerts", fontsize=12, fontweight="bold")
-    ax.set_title("Detection Method Comparison (Rule-Based vs ML vs GNN vs Sequence)", fontsize=13, fontweight="bold", pad=16)
+    ax.set_title("Detection Method Comparison (Rule-Based vs Isolation Forest)", fontsize=13, fontweight="bold", pad=16)
     _annotate_bars(ax, bars)
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, "ml_vs_rule_based.png"), dpi=200, bbox_inches="tight")

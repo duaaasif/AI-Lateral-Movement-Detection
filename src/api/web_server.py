@@ -486,29 +486,45 @@ def make_web_handler(
                     if not uploaded:
                         self._send_json(400, {"error": "Please upload at least one raw .log file first."})
                         return
-                    train_ratio = float(data.get("train_ratio", 0.70))
-                    split_mode = "window"
+                    mode = str(data.get("mode", "train_and_test")).strip()
+                    if mode not in ("train_and_test", "test_only"):
+                        mode = "train_and_test"
 
                     session.mark_results_ready(False)
-                    cmd = [
-                        sys.executable,
-                        os.path.join(BASE_DIR, "run_pipeline.py"),
-                        "--raw-dir",
-                        session.session_raw_dir,
-                        "--train-ratio",
-                        str(train_ratio),
-                        "--split-mode",
-                        split_mode,
-                    ]
+                    if mode == "test_only":
+                        cmd = [
+                            sys.executable,
+                            os.path.join(BASE_DIR, "run_pipeline.py"),
+                            "--raw-dir",
+                            session.session_raw_dir,
+                            "--no-split",
+                            "--no-retrain",
+                        ]
+                        job_label = "Direct Test Pipeline (Skip Split & Training)"
+                    else:
+                        train_ratio = float(data.get("train_ratio", 0.70))
+                        split_mode = "window"
+                        cmd = [
+                            sys.executable,
+                            os.path.join(BASE_DIR, "run_pipeline.py"),
+                            "--raw-dir",
+                            session.session_raw_dir,
+                            "--train-ratio",
+                            str(train_ratio),
+                            "--split-mode",
+                            split_mode,
+                        ]
+                        job_label = "Upload -> Split -> Train/Detect Pipeline"
+
                     started = jobs.start_subprocess(
-                        "Upload -> Split -> Train/Detect Pipeline",
+                        job_label,
                         cmd,
                         on_success=lambda: session.mark_results_ready(True),
                     )
                     if not started:
                         self._send_json(409, {"error": "Another job is already running."})
                         return
-                    self._send_json(202, {"started": True, "job": jobs.snapshot()})
+                    self._send_json(202, {"started": True, "mode": mode, "job": jobs.snapshot()})
                 elif path == "/api/tests/run":
                     cmd = [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"]
                     started = jobs.start_subprocess("Automated Test Suite", cmd)

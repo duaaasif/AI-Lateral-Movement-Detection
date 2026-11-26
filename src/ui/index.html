@@ -25,19 +25,13 @@
 
       <nav class="nav-menu">
         <button class="nav-item active" data-tab="upload">
-          <span class="nav-step">1</span> Upload &amp; Split
+          <span class="nav-step">1</span> Upload &amp; Run
         </button>
         <button class="nav-item" data-tab="results" id="nav-results">
           <span class="nav-step">2</span> Results &amp; Graphs
         </button>
         <button class="nav-item" data-tab="logs" id="nav-logs">
           <span class="nav-step">3</span> Log Explorer
-        </button>
-        <button class="nav-item" data-tab="simulator">
-          <span class="nav-step">4</span> Live Threat Tester
-        </button>
-        <button class="nav-item" data-tab="tests">
-          <span class="nav-step">5</span> System Tests
         </button>
       </nav>
 
@@ -54,8 +48,8 @@
     <main class="main-content">
       <header class="topbar">
         <div>
-          <h1 id="page-title">Upload Raw Logs &amp; Configure Split</h1>
-          <p class="topbar-sub" id="page-subtitle">Upload raw Windows/Linux <code>.log</code> files, split into Train/Test sets, train AI models, and inspect detected lateral movement graphs.</p>
+          <h1 id="page-title">Upload Raw Logs &amp; Run Analysis</h1>
+          <p class="topbar-sub" id="page-subtitle">Upload raw Windows/Linux <code>.log</code> files to automatically parse, split, train AI models, and inspect lateral movement graphs.</p>
         </div>
         <div class="topbar-actions">
           <div class="theme-picker-wrap">
@@ -70,83 +64,64 @@
         </div>
       </header>
 
-      <!-- TAB 1: CLEAN UPLOAD & SPLIT WORKFLOW -->
+      <!-- TAB 1: CLEAN UPLOAD & RUN WORKFLOW -->
       <section class="tab-panel active" id="tab-upload">
-        <div class="wizard-grid">
-          <div class="card hero-card">
-            <div class="card-header">
-              <h2>Step 1 — Upload Raw <code>.log</code> File(s)</h2>
-              <span class="badge badge-neutral" id="uploaded-count-badge">0 files queued</span>
-            </div>
+        <div class="card hero-card">
+          <div class="card-header">
+            <h2>Step 1 — Upload Raw <code>.log</code> File(s)</h2>
+            <span class="badge badge-neutral" id="uploaded-count-badge">0 files queued</span>
+          </div>
 
-            <div class="dropzone" id="dropzone">
-              <div class="dropzone-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-              </div>
-              <div class="dropzone-title">Drag &amp; drop raw <code>.log</code> files here</div>
-              <div class="dropzone-sub">
-                Supports Windows Event logs (Security, PowerShell, WinRM, RDP, System, Application) &amp; Linux logs (<code>auth.log</code>, <code>syslog</code>, <code>auditd</code>)
-              </div>
-              <input type="file" id="file-input" multiple accept=".log,.jsonl,.ndjson,.csv,.txt" hidden />
-              <button class="btn btn-primary" id="btn-browse-files" type="button">Browse .log Files</button>
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
             </div>
-
-            <div class="upload-progress-wrap" id="upload-progress-wrap" style="display:none;">
-              <div class="upload-progress-text" id="upload-progress-text">Uploading...</div>
-              <div class="bar-bg"><div class="bar-fill" id="upload-progress-bar" style="width:0%"></div></div>
+            <div class="dropzone-title">Drag &amp; drop raw <code>.log</code> files here</div>
+            <div class="dropzone-sub">
+              Supports Windows Event logs (Security, PowerShell, WinRM, RDP, System, Application) &amp; Linux logs (<code>auth.log</code>, <code>syslog</code>, <code>auditd</code>)
             </div>
+            <input type="file" id="file-input" multiple accept=".log,.jsonl,.ndjson,.csv,.txt" hidden />
+            <button class="btn btn-primary" id="btn-browse-files" type="button">Browse .log Files</button>
+          </div>
 
-            <div class="queued-section">
-              <h3>Uploaded Session Files</h3>
-              <ul class="file-list" id="uploaded-files-list">
-                <li class="empty-row">No files uploaded yet. Ready-to-upload samples are available in <code>data/upload_samples/*.log</code> and full 1M+ logs in <code>data/raw/*.log</code>.</li>
-              </ul>
+          <div class="upload-progress-wrap" id="upload-progress-wrap" style="display:none;">
+            <div class="upload-progress-text" id="upload-progress-text">Uploading...</div>
+            <div class="bar-bg"><div class="bar-fill" id="upload-progress-bar" style="width:0%"></div></div>
+          </div>
+
+          <div class="queued-section">
+            <h3>Uploaded Session Files</h3>
+            <ul class="file-list" id="uploaded-files-list">
+              <li class="empty-row">No files uploaded yet. Ready-to-upload samples are available in <code>data/upload_samples/*.log</code> and full 1M+ logs in <code>data/raw/*.log</code>.</li>
+            </ul>
+          </div>
+
+          <div class="pipeline-info-box" style="margin-top: 14px; margin-bottom: 14px;">
+            <label for="run-mode-select" class="field" style="color: var(--text); font-weight: 600;">
+              Execution Mode
+              <select id="run-mode-select" class="input" style="margin-top: 4px; max-width: 480px;">
+                <option value="train_and_test" selected>Train &amp; Test (70/30 Split — Train AI model then test)</option>
+                <option value="test_only">Direct Test Only (Demo — Skip Split &amp; Training, use pre-trained model)</option>
+              </select>
+            </label>
+            <div class="help-text" id="run-mode-desc">
+              Splits parsed logs 70/30 chronologically, trains Isolation Forest on Train, and detects lateral movement on Test.
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header">
-              <h2>Step 2 — Train / Test Split &amp; Run</h2>
-            </div>
-
-            <div class="split-control-box">
-              <div class="split-header-row">
-                <span>Train / Test Split Ratio</span>
-                <strong id="split-ratio-label">70% Train / 30% Test</strong>
-              </div>
-              <input type="range" id="inp-train-ratio" min="50" max="90" step="5" value="70" class="range-slider" />
-              <div class="split-visual-bar">
-                <div class="split-train-seg" id="split-train-seg" style="width:70%">Train (70%)</div>
-                <div class="split-test-seg" id="split-test-seg" style="width:30%">Test (30%)</div>
-              </div>
-            </div>
-
-            <div class="field" style="margin-top: 14px;">
-              <span>Split Strategy</span>
-              <div class="input" style="font-weight: 600;">10-Min Window Boundary Split (Train on earlier windows, Detect on later windows)</div>
-            </div>
-
-            <div class="pipeline-info-box">
-              <div class="info-item"><strong>1. Parse:</strong> Raw Windows/Linux <code>.log</code> &#8594; readable normalized events</div>
-              <div class="info-item"><strong>2. Split:</strong> Separate Train &amp; Test datasets with zero test leakage</div>
-              <div class="info-item"><strong>3. Train:</strong> Fit IsolationForest, OneClassSVM, Autoencoder, GraphSAGE &amp; LSTM on Train</div>
-              <div class="info-item"><strong>4. Detect &amp; Graph:</strong> Score Test set with AI + Rules and open Results &amp; Graphs</div>
-            </div>
-
-            <button class="btn btn-primary btn-lg" id="btn-start-analysis" disabled>
-              Split Data &amp; Run Lateral Movement Analysis
-            </button>
-          </div>
+          <button class="btn btn-primary btn-lg" id="btn-start-analysis" disabled>
+            Run Lateral Movement Analysis
+          </button>
         </div>
 
         <!-- Live Stepper & Console -->
         <div class="card" id="execution-card">
           <div class="card-header">
-            <h2>Step 3 — Live Pipeline Progress</h2>
+            <h2>Step 2 — Live Pipeline Progress</h2>
             <div class="console-meta">
               <span class="badge badge-neutral" id="job-status-badge">idle</span>
               <span id="job-elapsed" class="meta-text">0.0s</span>
@@ -162,7 +137,7 @@
             <div class="step-chip" data-step="6">6. Build Graphs &amp; Eval</div>
           </div>
 
-          <pre class="terminal compact" id="job-terminal">Upload your raw .log file(s) above and click "Split Data & Run Lateral Movement Analysis".</pre>
+          <pre class="terminal compact" id="job-terminal">Upload your raw .log file(s) above and click "Run Lateral Movement Analysis".</pre>
         </div>
       </section>
 
@@ -170,38 +145,31 @@
       <section class="tab-panel" id="tab-results">
         <div class="empty-state-card card" id="results-empty-state">
           <h2>No Analysis Results Yet</h2>
-          <p class="help-text">Upload one or more raw <code>.log</code> files on the <strong>Upload &amp; Split</strong> tab and run the pipeline to view Train/Test split metrics, threat alerts, and visualization graphs.</p>
-          <button class="btn btn-primary" id="btn-go-upload" style="margin-top: 12px;">Go to Upload &amp; Split</button>
+          <p class="help-text">Upload one or more raw <code>.log</code> files on the <strong>Upload &amp; Run</strong> tab and run the pipeline to view Train/Test split metrics, threat alerts, and visualization graphs.</p>
+          <button class="btn btn-primary" id="btn-go-upload" style="margin-top: 12px;">Go to Upload &amp; Run</button>
         </div>
 
         <div id="results-content" style="display:none;">
           <!-- Split Banner -->
           <div class="split-banner card">
-            <div class="split-banner-item">
-              <div class="kpi-label">Total Parsed Events</div>
+            <div class="split-banner-item" id="res-total-card">
+              <div class="kpi-label" id="res-total-label">Total Parsed Events</div>
               <div class="split-banner-val" id="res-total-events">—</div>
             </div>
-            <div class="split-banner-item">
-              <div class="kpi-label">Train Split</div>
+            <div class="split-banner-item" id="res-train-card">
+              <div class="kpi-label" id="res-train-label">Train Split</div>
               <div class="split-banner-val accent-cyan" id="res-train-split">—</div>
-              <div class="kpi-foot" id="res-train-range">—</div>
             </div>
-            <div class="split-banner-item">
-              <div class="kpi-label">Test Split (Evaluated)</div>
+            <div class="split-banner-item" id="res-test-card">
+              <div class="kpi-label" id="res-test-label">Test Split</div>
               <div class="split-banner-val accent-green" id="res-test-split">—</div>
-              <div class="kpi-foot" id="res-test-range">—</div>
-            </div>
-            <div class="split-banner-item">
-              <div class="kpi-label">Test Feature Windows</div>
-              <div class="split-banner-val" id="res-windows">—</div>
-              <div class="kpi-foot" id="res-split-mode">—</div>
             </div>
           </div>
 
           <!-- KPIs -->
           <div class="kpi-grid">
             <div class="kpi-card">
-              <div class="kpi-label">Test Alerts Triggered</div>
+              <div class="kpi-label" id="kpi-alerts-label">Test Alerts Triggered</div>
               <div class="kpi-value" id="kpi-alerts">—</div>
               <div class="kpi-foot" id="kpi-critical-count">0 CRITICAL threat windows</div>
             </div>
@@ -216,9 +184,9 @@
               <div class="kpi-foot" id="kpi-cm">TP: — | FP: — | FN: —</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-label">Active AI + Rule Models</div>
-              <div class="kpi-value" id="kpi-models">4</div>
-              <div class="kpi-foot">Rules + IF/SVM/AE + GraphSAGE + LSTM</div>
+              <div class="kpi-label">Active Detection Engines</div>
+              <div class="kpi-value" id="kpi-models">2</div>
+              <div class="kpi-foot">Fixed Rules + Isolation Forest</div>
             </div>
           </div>
 
@@ -235,7 +203,7 @@
           <div class="two-col">
             <div class="card">
               <div class="card-header">
-                <h2>Prioritized Test Threat Windows</h2>
+                <h2 id="risk-table-title">Prioritized Test Threat Windows</h2>
                 <span class="badge badge-neutral" id="risk-window-count">0 windows</span>
               </div>
               <div class="table-wrap">
@@ -266,7 +234,7 @@
           <!-- Alert Feed -->
           <div class="card">
             <div class="card-header">
-              <h2>Test-Set Merged Alert Feed</h2>
+              <h2 id="alert-feed-title">Test-Set Merged Alert Feed</h2>
               <div class="filter-bar">
                 <select id="filter-priority" class="input">
                   <option value="">All Priorities</option>
@@ -278,9 +246,7 @@
                 <select id="filter-source" class="input">
                   <option value="">All Detectors</option>
                   <option value="Rule-based">Rule-based</option>
-                  <option value="ML">ML</option>
-                  <option value="GNN">GNN</option>
-                  <option value="Sequence">Sequence</option>
+                  <option value="ML">ML (Isolation Forest)</option>
                 </select>
                 <input id="filter-user" class="input" type="text" placeholder="Filter by user..." />
                 <button class="btn btn-secondary" id="btn-apply-alert-filters">Filter</button>
@@ -358,72 +324,6 @@
               <tbody id="parsed-logs-body"></tbody>
             </table>
           </div>
-        </div>
-      </section>
-
-      <!-- TAB 4: LIVE THREAT TESTER -->
-      <section class="tab-panel" id="tab-simulator">
-        <div class="two-col">
-          <div class="card">
-            <div class="card-header">
-              <h2>Real-Time Event Scorer (<code>POST /score</code>)</h2>
-            </div>
-            <div class="btn-group preset-bar">
-              <button class="btn btn-secondary preset-btn" data-preset="psexec">PSExec + Admin Share</button>
-              <button class="btn btn-secondary preset-btn" data-preset="rdp">Off-Hours RDP + PowerShell</button>
-              <button class="btn btn-secondary preset-btn" data-preset="linux">Linux SSH Brute + Sudo</button>
-              <button class="btn btn-secondary preset-btn" data-preset="benign">Benign Workday</button>
-            </div>
-            <textarea id="sim-json" class="code-editor" rows="14"></textarea>
-            <div class="btn-group">
-              <button class="btn btn-primary" id="btn-score-sim">Analyze &amp; Score Events</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h2>Scoring Verdict</h2>
-              <span class="badge badge-neutral" id="sim-priority-badge">Waiting</span>
-            </div>
-            <div class="verdict-banner">
-              <div>
-                <div class="kpi-label">Computed Risk Score</div>
-                <div class="kpi-value" id="sim-risk-score">0.0</div>
-              </div>
-              <div class="risk-meter-wrap">
-                <div class="risk-meter-bar" id="sim-risk-bar" style="width: 0%"></div>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Source</th>
-                    <th>Alert Type</th>
-                    <th>User</th>
-                    <th>Host</th>
-                    <th>Severity</th>
-                    <th>Details</th>
-                  </tr>
-                </thead>
-                <tbody id="sim-alerts-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 5: SYSTEM TESTS -->
-      <section class="tab-panel" id="tab-tests">
-        <div class="card">
-          <div class="card-header">
-            <h2>Automated Unit &amp; Integration Test Suite</h2>
-            <button class="btn btn-success" id="btn-run-tests">Run All Tests</button>
-          </div>
-          <p class="help-text">
-            Executes <code>python -m unittest discover -s tests -v</code> in isolated temporary workspaces without altering your active session data.
-          </p>
-          <pre class="terminal" id="test-terminal" style="margin-top: 12px;">Click "Run All Tests" to verify parser, rules, ML, GNN, LSTM, and GUI endpoints.</pre>
         </div>
       </section>
     </main>

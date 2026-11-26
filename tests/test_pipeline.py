@@ -18,11 +18,9 @@ if BASE_DIR not in sys.path:
 from src.api.scoring_server import score_events
 from src.api.web_server import JobManager, SessionState, make_web_handler
 from src.config import load_config
-from src.detection.gnn_detection import run_gnn_detection
 from src.detection.merge_alerts import merge_and_score_alerts
 from src.detection.ml_detection import train_and_predict_ml
 from src.detection.rule_based_detection import evaluate_rules, run_rule_detection
-from src.detection.sequence_detection import run_sequence_detection
 from src.ingestion.generate_synthetic_logs import generate_raw_dataset
 from src.ingestion.log_ingestion import ingest_logs
 from src.ml.feature_engineering import NUMERIC_FEATURE_COLUMNS, build_features
@@ -46,17 +44,12 @@ class TestLateralMovementPipeline(unittest.TestCase):
             "alerts_dir": os.path.join(self.tmp.name, "alerts"),
             "rule_alerts_file": os.path.join(self.tmp.name, "alerts", "alerts.csv"),
             "ml_alerts_file": os.path.join(self.tmp.name, "alerts", "ml_alerts.csv"),
-            "gnn_alerts_file": os.path.join(self.tmp.name, "alerts", "gnn_alerts.csv"),
-            "sequence_alerts_file": os.path.join(self.tmp.name, "alerts", "sequence_alerts.csv"),
             "all_alerts_file": os.path.join(self.tmp.name, "alerts", "all_alerts.csv"),
             "user_risk_file": os.path.join(self.tmp.name, "alerts", "user_risk_scores.csv"),
             "eval_report_file": os.path.join(self.tmp.name, "alerts", "evaluation_report.json"),
             "visualizations_dir": os.path.join(self.tmp.name, "alerts", "visualizations"),
             "models_dir": os.path.join(self.tmp.name, "models"),
         }
-        cfg["ml"]["autoencoder_epochs"] = 8
-        cfg["ml"]["gnn_epochs"] = 10
-        cfg["ml"]["sequence_epochs"] = 8
 
         os.makedirs(cfg["paths"]["raw_dir"], exist_ok=True)
         with open(self.cfg_path, "w", encoding="utf-8") as f:
@@ -194,12 +187,6 @@ class TestLateralMovementPipeline(unittest.TestCase):
         self.assertGreater(len(ml_df), 0)
         self.assertEqual(len(ml_df), len(train_and_predict_ml(retrain=False)))
 
-        gnn_df = run_gnn_detection(retrain=True)
-        self.assertGreater(len(gnn_df), 0)
-
-        seq_df = run_sequence_detection(retrain=True)
-        self.assertGreater(len(seq_df), 0)
-
         merged = merge_and_score_alerts(cfg)
         self.assertGreater(len(merged), 0)
 
@@ -239,7 +226,10 @@ class TestLateralMovementPipeline(unittest.TestCase):
             # 1. Clean session startup: no pre-processed results
             with urlopen(f"{base}/") as r:
                 self.assertEqual(r.status, 200)
-                self.assertIn("AegisLM", r.read().decode("utf-8"))
+                html = r.read().decode("utf-8")
+                self.assertIn("AegisLM", html)
+                self.assertIn("run-mode-select", html)
+                self.assertIn("test_only", html)
             with urlopen(f"{base}/api/overview") as r:
                 ov0 = json.loads(r.read().decode("utf-8"))
                 self.assertFalse(ov0["has_results"])
@@ -298,6 +288,19 @@ class TestLateralMovementPipeline(unittest.TestCase):
             with urlopen(f"{base}/api/logs/raw?file=uploaded_mixed.log&lines=5") as r:
                 raw_prev = json.loads(r.read().decode("utf-8"))
                 self.assertEqual(len(raw_prev["lines"]), 5)
+
+            # 4. Direct Test Only mode (skip Train/Test split and skip training, use saved model)
+            summary_demo = run_pipeline(
+                raw_dir=session_dir,
+                use_train_test_split=False,
+                retrain=False,
+            )
+            self.assertEqual(summary_demo["split"]["split_mode"], "none")
+            self.assertEqual(summary_demo["split"]["total_events"], 5)
+            with urlopen(f"{base}/api/overview") as r:
+                ov2 = json.loads(r.read().decode("utf-8"))
+                self.assertEqual(ov2["split"]["split_mode"], "none")
+                self.assertEqual(ov2["parsed_events_count"], 5)
         finally:
             server.shutdown()
             server.server_close()
