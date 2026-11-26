@@ -279,6 +279,10 @@ def generate_raw_dataset(
     roster = _build_user_roster()
 
     # Clean up old .jsonl or legacy files so raw_dir strictly contains .log files + ground truth
+    from glob import glob as _glob
+    for old_pat in ["windows_security_part*.log"]:
+        for p in _glob(os.path.join(raw_dir, old_pat)):
+            os.remove(p)
     for old_name in [
         "synthetic_logs.csv",
         "sysmon_events.jsonl",
@@ -286,6 +290,7 @@ def generate_raw_dataset(
         "edr_telemetry.jsonl",
         "windows_security_events.jsonl",
         "windows_security.jsonl",
+        "windows_security.log",
         "windows_powershell_cmd.jsonl",
         "windows_rdp.jsonl",
         "windows_system_app.jsonl",
@@ -570,6 +575,23 @@ def generate_raw_dataset(
 
     gt_df = pd.DataFrame(gt_rows).drop_duplicates(subset=["user", "time_window"]).reset_index(drop=True)
     gt_df.to_csv(gt_path, index=False)
+
+    # Split windows_security.log if >85,000 lines so every raw .log file stays <45 MB
+    if n_win_sec > 85_000 and os.path.exists(win_sec_path):
+        part = 1
+        cnt = 0
+        out_p = open(os.path.join(raw_dir, f"windows_security_part{part}.log"), "w", encoding="utf-8")
+        with open(win_sec_path, "r", encoding="utf-8") as src_p:
+            for line in src_p:
+                if cnt >= 85_000:
+                    out_p.close()
+                    part += 1
+                    out_p = open(os.path.join(raw_dir, f"windows_security_part{part}.log"), "w", encoding="utf-8")
+                    cnt = 0
+                out_p.write(line)
+                cnt += 1
+        out_p.close()
+        os.remove(win_sec_path)
 
     # Also generate convenient upload-ready .log files (~18k events, ~2-4 MB each) in data/upload_samples/
     if write_samples and total_events >= 20_000:

@@ -50,7 +50,7 @@ AI-Lateral-Movement-Detection/
 The parser (`src/ingestion/log_ingestion.py`) automatically detects both Windows EVTX/Winlogbeat JSON lines and Linux RFC3164/RFC5424 syslog lines inside `.log` files:
 
 ### Windows Logs
-- **Security** (`windows_security.log`): `4624` (Logon), `4625` (Failed Logon), `4648`, `4672` (Special Privileges), `4688` (Process Creation), `4698` (Scheduled Task), `4768`/`4769` (Kerberos), `5140` (Network Share Access)
+- **Security** (`windows_security_part1..4.log`): `4624` (Logon), `4625` (Failed Logon), `4648`, `4672` (Special Privileges), `4688` (Process Creation), `4698` (Scheduled Task), `4768`/`4769` (Kerberos), `5140` (Network Share Access)
 - **PowerShell, WinRM & CMD** (`windows_powershell_cmd.log`): PowerShell Operational (`4103`, `4104`), WinRM Operational (`6`, `91`), CMD command execution
 - **RDP / Terminal Services** (`windows_rdp.log`): RemoteConnectionManager (`1149`) & LocalSessionManager (`21`, `24`)
 - **System & Application** (`windows_system_app.log`): Service Control Manager (`7036`, `7045` including `PSEXESVC`) & Application (`1000`, `1001`, `1022`)

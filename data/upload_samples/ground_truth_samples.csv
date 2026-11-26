@@ -1,0 +1,11 @@
+user,time_window,attack_scenario,is_attack
+ali,2025-11-11 02:10:00,camp_01_ali_offhours_smb_psexec,1
+sara,2025-11-12 14:10:00,camp_02_sara_finance_db_pivot,1
+omar,2025-11-13 22:10:00,camp_03_omar_spray_schtasks_linux,1
+bilal,2025-11-14 11:10:00,camp_04_bilal_recon_wmi_rdp,1
+nadia,2025-11-15 03:10:00,camp_05_nadia_ssh_linux_pivot,1
+zoya,2025-11-11 19:10:00,camp_06_zoya_kerberoast_rdp,1
+emp012,2025-11-12 01:10:00,camp_07_emp012_admin_share_sweep,1
+emp045,2025-11-13 23:10:00,camp_08_emp045_winrm_powershell,1
+emp077,2025-11-13 04:10:00,camp_09_emp077_ssh_bruteforce_sudo,1
+ali,2025-11-14 21:10:00,camp_10_ali_rdp_service_staging,1

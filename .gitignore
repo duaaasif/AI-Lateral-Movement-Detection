@@ -6,20 +6,10 @@ __pycache__/
 *$py.class
 *.egg-info/
 
-# Generated Raw Logs, Splits, Processed Data, Alerts & Charts
-data/raw/*.log
-data/raw/*.jsonl
-data/raw/*.csv
-data/upload_samples/
-data/session_uploads/
+# Oversized intermediate CSVs (>100MB GitHub limit) & transient session files
 data/processed/
-data/features/
 data/splits/
-data/alerts/
-
-# Trained Model Weights
-models/*.joblib
-models/*.pt
+data/session_uploads/
 
 # OS / Editor
 desktop.ini

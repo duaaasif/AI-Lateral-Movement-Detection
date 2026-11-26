@@ -1,0 +1,16 @@
+user,time_window,risk_score,priority,detectors_triggered,alert_count
+sara,2025-11-23 14:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",45
+omar,2025-11-24 22:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",42
+bilal,2025-11-25 11:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",32
+nadia,2025-11-26 03:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",35
+zoya,2025-11-27 19:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",50
+emp012,2025-11-28 01:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",50
+emp077,2025-11-29 04:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",21
+emp045,2025-11-29 23:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",42
+ali,2025-11-30 21:10:00,100.0,CRITICAL,"GNN,ML,Rule-based,Sequence",50
+bilal,2025-11-25 11:20:00,26.25,LOW,Rule-based,3
+emp012,2025-11-28 07:00:00,19.5,LOW,Sequence,1
+nadia,2025-11-26 07:00:00,19.07,LOW,Sequence,1
+zoya,2025-11-28 07:00:00,18.11,LOW,Sequence,1
+nadia,2025-11-26 07:10:00,13.9,LOW,Sequence,1
+omar,2025-11-25 07:00:00,11.59,LOW,Sequence,1
