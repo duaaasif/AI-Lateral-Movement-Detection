@@ -1,9 +1,10 @@
 """Evaluation metrics calculator (Precision, Recall, F1, ROC-AUC, PR-AUC)."""
 
+from datetime import datetime
 import json
 import os
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -118,6 +119,165 @@ def evaluate_detections(cfg: Dict[str, Any] | None = None) -> Dict[str, Any]:
         report_path,
     )
     return report
+
+
+def get_model_history_path(cfg: Dict[str, Any] | None = None) -> str:
+    """Return path to cumulative model evaluation history JSON."""
+    cfg = cfg or load_config()
+    paths = cfg["paths"]
+    return paths.get("model_history_file") or os.path.join(paths["alerts_dir"], "model_history.json")
+
+
+def load_model_history(cfg: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
+    """Load persisted list of historical pipeline evaluation runs."""
+    path = get_model_history_path(cfg)
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+def clear_model_history(cfg: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    """Clear all recorded runs in cumulative model history."""
+    path = get_model_history_path(cfg)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump([], f, indent=2)
+    return summarize_model_history([])
+
+
+def record_model_run(
+    cfg: Dict[str, Any],
+    mode: str,
+    source_files: List[str],
+    total_events: int,
+    evaluated_events: int,
+    evaluated_windows: int,
+    total_alerts: int,
+    rule_alerts: int,
+    ml_alerts: int,
+    eval_report: Dict[str, Any] | None = None,
+) -> Dict[str, Any]:
+    """Append one completed run's metrics to cumulative model history."""
+    eval_report = eval_report or {}
+    eval_status = str(eval_report.get("status", "skipped"))
+    ens = eval_report.get("ensemble_at_medium_threshold") if eval_status == "evaluated" else None
+
+    now = datetime.now()
+    entry: Dict[str, Any] = {
+        "run_id": now.strftime("%Y%m%d_%H%M%S_%f"),
+        "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "mode": mode,
+        "source_files": list(source_files),
+        "total_events": int(total_events),
+        "evaluated_events": int(evaluated_events),
+        "evaluated_windows": int(evaluated_windows),
+        "total_alerts": int(total_alerts),
+        "rule_alerts": int(rule_alerts),
+        "ml_alerts": int(ml_alerts),
+        "eval_status": eval_status if ens else "skipped",
+    }
+    if ens:
+        entry.update({
+            "tp": int(ens.get("tp", 0)),
+            "fp": int(ens.get("fp", 0)),
+            "tn": int(ens.get("tn", 0)),
+            "fn": int(ens.get("fn", 0)),
+            "accuracy": float(ens.get("accuracy", 0.0)),
+            "precision": float(ens.get("precision", 0.0)),
+            "recall": float(ens.get("recall", 0.0)),
+            "f1": float(ens.get("f1", 0.0)),
+            "roc_auc": ens.get("roc_auc"),
+            "pr_auc": ens.get("pr_auc"),
+            "per_detector": eval_report.get("per_detector", {}),
+        })
+
+    history = load_model_history(cfg)
+    history.append(entry)
+    path = get_model_history_path(cfg)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2)
+    return entry
+
+
+def _metrics_from_counts(tp: int, fp: int, tn: int, fn: int) -> Dict[str, Any]:
+    total = tp + fp + tn + fn
+    acc = (tp + tn) / total if total > 0 else 0.0
+    prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+    fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+    fnr = fn / (fn + tp) if (fn + tp) > 0 else 0.0
+    return {
+        "tp": int(tp),
+        "fp": int(fp),
+        "tn": int(tn),
+        "fn": int(fn),
+        "total_windows": int(total),
+        "accuracy": round(float(acc), 4),
+        "precision": round(float(prec), 4),
+        "recall": round(float(rec), 4),
+        "f1": round(float(f1), 4),
+        "fpr": round(float(fpr), 4),
+        "fnr": round(float(fnr), 4),
+    }
+
+
+def summarize_model_history(history: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Compute cumulative (pooled micro) and macro-averaged metrics across all recorded runs."""
+    eval_runs = [r for r in history if r.get("eval_status") == "evaluated"]
+
+    tot_tp = sum(int(r.get("tp", 0)) for r in eval_runs)
+    tot_fp = sum(int(r.get("fp", 0)) for r in eval_runs)
+    tot_tn = sum(int(r.get("tn", 0)) for r in eval_runs)
+    tot_fn = sum(int(r.get("fn", 0)) for r in eval_runs)
+    cumulative = _metrics_from_counts(tot_tp, tot_fp, tot_tn, tot_fn) if eval_runs else None
+
+    macro: Dict[str, Any] | None = None
+    if eval_runs:
+        n = len(eval_runs)
+        rocs = [float(r["roc_auc"]) for r in eval_runs if r.get("roc_auc") is not None]
+        prs = [float(r["pr_auc"]) for r in eval_runs if r.get("pr_auc") is not None]
+        macro = {
+            "accuracy": round(sum(float(r.get("accuracy", 0.0)) for r in eval_runs) / n, 4),
+            "precision": round(sum(float(r.get("precision", 0.0)) for r in eval_runs) / n, 4),
+            "recall": round(sum(float(r.get("recall", 0.0)) for r in eval_runs) / n, 4),
+            "f1": round(sum(float(r.get("f1", 0.0)) for r in eval_runs) / n, 4),
+            "roc_auc": round(sum(rocs) / len(rocs), 4) if rocs else None,
+            "pr_auc": round(sum(prs) / len(prs), 4) if prs else None,
+        }
+
+    per_detector: Dict[str, Dict[str, Any]] = {}
+    for det_name in ("Rule-based", "ML"):
+        d_runs = [r["per_detector"][det_name] for r in eval_runs if det_name in (r.get("per_detector") or {})]
+        if d_runs:
+            per_detector[det_name] = _metrics_from_counts(
+                sum(int(d.get("tp", 0)) for d in d_runs),
+                sum(int(d.get("fp", 0)) for d in d_runs),
+                sum(int(d.get("tn", 0)) for d in d_runs),
+                sum(int(d.get("fn", 0)) for d in d_runs),
+            )
+
+    return {
+        "total_runs": len(history),
+        "evaluated_runs": len(eval_runs),
+        "unlabeled_runs": len(history) - len(eval_runs),
+        "total_events": sum(int(r.get("total_events", 0)) for r in history),
+        "total_evaluated_events": sum(int(r.get("evaluated_events", 0)) for r in history),
+        "total_evaluated_windows": sum(int(r.get("evaluated_windows", 0)) for r in history),
+        "total_alerts": sum(int(r.get("total_alerts", 0)) for r in history),
+        "total_rule_alerts": sum(int(r.get("rule_alerts", 0)) for r in history),
+        "total_ml_alerts": sum(int(r.get("ml_alerts", 0)) for r in history),
+        "cumulative": cumulative,
+        "macro_average": macro,
+        "per_detector": per_detector,
+        "runs": list(reversed(history)),
+    }
 
 
 if __name__ == "__main__":

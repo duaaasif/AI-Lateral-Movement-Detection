@@ -1,52 +1,52 @@
 {
   "status": "evaluated",
-  "total_windows": 53054,
-  "attack_windows": 11,
-  "benign_windows": 53043,
+  "total_windows": 7704,
+  "attack_windows": 13,
+  "benign_windows": 7691,
   "ensemble_at_medium_threshold": {
-    "tp": 10,
-    "fp": 1,
-    "tn": 53042,
-    "fn": 1,
-    "precision": 0.9091,
-    "recall": 0.9091,
-    "f1": 0.9091,
+    "tp": 13,
+    "fp": 0,
+    "tn": 7691,
+    "fn": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
     "accuracy": 1.0,
-    "roc_auc": 0.9545,
-    "pr_auc": 0.9091
+    "roc_auc": 1.0,
+    "pr_auc": 1.0
   },
   "any_detector_alert": {
-    "tp": 10,
-    "fp": 33,
-    "tn": 53010,
-    "fn": 1,
-    "precision": 0.2326,
-    "recall": 0.9091,
-    "f1": 0.3704,
-    "accuracy": 0.9994,
-    "roc_auc": 0.9545,
-    "pr_auc": 0.9091
+    "tp": 13,
+    "fp": 0,
+    "tn": 7691,
+    "fn": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "accuracy": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0
   },
   "per_detector": {
     "Rule-based": {
       "tp": 10,
-      "fp": 1,
-      "tn": 53042,
-      "fn": 1,
-      "precision": 0.9091,
-      "recall": 0.9091,
-      "f1": 0.9091,
-      "accuracy": 1.0
+      "fp": 0,
+      "tn": 7691,
+      "fn": 3,
+      "precision": 1.0,
+      "recall": 0.7692,
+      "f1": 0.8696,
+      "accuracy": 0.9996
     },
     "ML": {
-      "tp": 9,
-      "fp": 32,
-      "tn": 53011,
-      "fn": 2,
-      "precision": 0.2195,
-      "recall": 0.8182,
-      "f1": 0.3462,
-      "accuracy": 0.9994
+      "tp": 13,
+      "fp": 0,
+      "tn": 7691,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "accuracy": 1.0
     }
   }
 }

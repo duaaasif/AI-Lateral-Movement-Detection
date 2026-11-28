@@ -17,6 +17,7 @@ from src.utils.logger import get_logger
 logger = get_logger("merge_alerts")
 
 MERGED_COLUMNS = [
+    "alert_id",
     "time_window",
     "timestamp",
     "user",
@@ -93,7 +94,7 @@ def merge_and_score_alerts(cfg: Dict[str, Any] | None = None) -> pd.DataFrame:
     if not non_empty:
         empty_df = pd.DataFrame(columns=MERGED_COLUMNS)
         empty_df.to_csv(out_file, index=False)
-        pd.DataFrame(columns=["user", "time_window", "risk_score", "priority", "detectors_triggered", "alert_count"]).to_csv(risk_file, index=False)
+        pd.DataFrame(columns=["alert_id", "user", "time_window", "risk_score", "priority", "detectors_triggered", "alert_count", "summary"]).to_csv(risk_file, index=False)
         logger.warning("No alerts found to merge.")
         return empty_df
 
@@ -126,16 +127,105 @@ def merge_and_score_alerts(cfg: Dict[str, Any] | None = None) -> pd.DataFrame:
     )
 
     risk_df = win_stats.merge(src_agg, on=["user", "time_window"], how="inner")
+
+    # Attach behavioral window features (counts, hosts, failed logins, cmds) for ML-only counts & collective summary
+    feat_lookup: Dict[tuple, Dict[str, int]] = {}
+    feat_cols = {
+        "user",
+        "time_window",
+        "action_count",
+        "unique_hosts",
+        "failed_login_count",
+        "suspicious_process_count",
+        "num_unique_commands",
+        "num_source_ips",
+        "sensitive_host_count",
+    }
+    feat_file = paths.get("features_file")
+    if feat_file and os.path.exists(feat_file):
+        try:
+            fdf = pd.read_csv(feat_file, usecols=lambda c: c in feat_cols, low_memory=False)
+            if {"user", "time_window", "action_count"}.issubset(fdf.columns):
+                fdf["user"] = fdf["user"].fillna("").astype(str)
+                fdf["time_window"] = pd.to_datetime(fdf["time_window"], errors="coerce").dt.floor(time_window)
+                for c in feat_cols - {"user", "time_window"}:
+                    if c in fdf.columns:
+                        fdf[c] = pd.to_numeric(fdf[c], errors="coerce").fillna(0).astype(int)
+                fdf = fdf.dropna(subset=["time_window"]).drop_duplicates(subset=["user", "time_window"])
+                for _, fr in fdf.iterrows():
+                    feat_lookup[(fr["user"], fr["time_window"])] = {
+                        c: int(fr[c]) for c in (feat_cols - {"user", "time_window"}) if c in fdf.columns
+                    }
+                risk_df = risk_df.merge(fdf[["user", "time_window", "action_count"]], on=["user", "time_window"], how="left")
+                ml_only_mask = (risk_df["detectors_triggered"] == "ML") & risk_df["action_count"].notna()
+                risk_df.loc[ml_only_mask, "alert_count"] = (
+                    risk_df.loc[ml_only_mask, "action_count"].astype(int).clip(lower=1)
+                )
+                risk_df = risk_df.drop(columns=["action_count"])
+        except Exception as exc:
+            logger.debug("Could not attach feature summary columns: %s", exc)
+
+    # Build collective summary of actions & triggers per (user, time_window)
+    summaries: Dict[tuple, str] = {}
+    for (usr, tw), grp in df.groupby(["user", "time_window"], sort=False):
+        finfo = feat_lookup.get((str(usr), tw), {})
+        hosts_raw = [h.strip() for raw_h in grp["host"].dropna().astype(str) for h in raw_h.split(",") if h.strip() and h.strip() != "-"]
+        uniq_rule_hosts = sorted(set(hosts_raw))
+
+        # Window-wide activity & indicator counts
+        act_parts: List[str] = []
+        n_act = finfo.get("action_count")
+        n_hosts = finfo.get("unique_hosts") or len(uniq_rule_hosts)
+        if n_act:
+            host_txt = f" across {n_hosts} host{'s' if n_hosts != 1 else ''}" if n_hosts else ""
+            if uniq_rule_hosts and len(uniq_rule_hosts) <= 4:
+                host_txt += f" ({', '.join(uniq_rule_hosts)})"
+            act_parts.append(f"{n_act} events{host_txt}")
+        elif uniq_rule_hosts:
+            shown = ", ".join(uniq_rule_hosts[:4]) + ("..." if len(uniq_rule_hosts) > 4 else "")
+            act_parts.append(f"Hosts: {shown}")
+
+        ind_parts: List[str] = []
+        for col_name, label in (
+            ("failed_login_count", "failed logins"),
+            ("num_source_ips", "src IPs"),
+            ("suspicious_process_count", "susp procs"),
+            ("num_unique_commands", "cmds"),
+            ("sensitive_host_count", "sensitive hits"),
+        ):
+            val = finfo.get(col_name, 0)
+            if val > 0:
+                ind_parts.append(f"{val} {label}")
+
+        # Collective trigger breakdown
+        rule_grp = grp[grp["source"] == "Rule-based"]
+        has_ml = bool((grp["source"] == "ML").any())
+        trig_parts: List[str] = []
+        if not rule_grp.empty:
+            vc = rule_grp["alert_type"].value_counts()
+            trig_parts.append("Triggers: " + ", ".join(f"{t} ({c})" for t, c in vc.items()))
+        if has_ml:
+            if rule_grp.empty:
+                trig_parts.append("ML behavioral anomaly (no static rule match)")
+            else:
+                trig_parts.append("+ ML anomaly")
+
+        head = " — ".join(filter(None, [" ".join(act_parts), ", ".join(ind_parts) if ind_parts else ""]))
+        tail = " ".join(trig_parts)
+        summaries[(str(usr), tw)] = " | ".join(filter(None, [head, tail])) or f"{len(grp)} alert triggers"
+
+    risk_df["summary"] = [summaries.get((str(r["user"]), r["time_window"]), "") for _, r in risk_df.iterrows()]
     agreement_bonus = 0.15 * (risk_df["n_sources"] - 1).clip(lower=0) + 0.08 * (risk_df["distinct_types"] - 1).clip(lower=0)
     raw_risk = (risk_df["weighted_sum"] + agreement_bonus).clip(0.0, 1.0)
     risk_df["risk_score"] = (raw_risk * 100.0).round(2)
     risk_df["priority"] = risk_df["risk_score"].map(lambda sc: _classify_priority(sc, thresholds))
-    risk_out = risk_df[["user", "time_window", "risk_score", "priority", "detectors_triggered", "alert_count"]].sort_values(
+    risk_out = risk_df[["user", "time_window", "risk_score", "priority", "detectors_triggered", "alert_count", "summary"]].sort_values(
         ["risk_score", "time_window"], ascending=[False, True]
-    )
+    ).reset_index(drop=True)
+    risk_out.insert(0, "alert_id", [f"ALT-{i:04d}" for i in range(1, len(risk_out) + 1)])
 
     df = df.merge(
-        risk_out[["user", "time_window", "risk_score", "priority", "detectors_triggered"]],
+        risk_out[["alert_id", "user", "time_window", "risk_score", "priority", "detectors_triggered"]],
         on=["user", "time_window"],
         how="left",
     )

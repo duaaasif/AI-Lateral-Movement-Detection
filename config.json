@@ -62,7 +62,7 @@
     }
   },
   "ml": {
-    "contamination": 0.0005,
+    "contamination": 0.00015,
     "random_state": 42,
     "max_if_train_samples": 50000
   },

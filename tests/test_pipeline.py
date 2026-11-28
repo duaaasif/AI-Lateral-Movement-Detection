@@ -189,6 +189,8 @@ class TestLateralMovementPipeline(unittest.TestCase):
 
         merged = merge_and_score_alerts(cfg)
         self.assertGreater(len(merged), 0)
+        self.assertIn("alert_id", merged.columns)
+        self.assertTrue(merged["alert_id"].iloc[0].startswith("ALT-"))
 
         report = evaluate_detections(cfg)
         self.assertEqual(report["status"], "evaluated")
@@ -230,6 +232,8 @@ class TestLateralMovementPipeline(unittest.TestCase):
                 self.assertIn("AegisLM", html)
                 self.assertIn("run-mode-select", html)
                 self.assertIn("test_only", html)
+                self.assertIn("tab-performance", html)
+                self.assertIn("nav-performance", html)
             with urlopen(f"{base}/api/overview") as r:
                 ov0 = json.loads(r.read().decode("utf-8"))
                 self.assertFalse(ov0["has_results"])
@@ -273,6 +277,11 @@ class TestLateralMovementPipeline(unittest.TestCase):
                 self.assertEqual(up_res["saved"], "uploaded_mixed.log")
                 self.assertEqual(len(up_res["uploaded_files"]), 1)
 
+            # Provide isolated ground truth for the test fixture inside self.tmp
+            pd.DataFrame([
+                {"user": "ali", "time_window": "2025-11-16 02:10:00", "attack_scenario": "test_camp", "is_attack": 1}
+            ]).to_csv(cfg["paths"]["ground_truth_file"], index=False)
+
             # 3. Run 10-min window Train/Test split pipeline on uploaded directory
             summary = run_pipeline(raw_dir=session_dir, train_ratio=0.6, use_train_test_split=True)
             session.mark_results_ready(True)
@@ -285,6 +294,11 @@ class TestLateralMovementPipeline(unittest.TestCase):
                 ov1 = json.loads(r.read().decode("utf-8"))
                 self.assertTrue(ov1["has_results"])
                 self.assertGreater(len(ov1["charts"]), 0)
+                self.assertEqual(ov1["risk_scores"][0]["alert_id"], "ALT-0001")
+            with urlopen(f"{base}/api/alerts?alert_id=ALT-0001") as r:
+                al1 = json.loads(r.read().decode("utf-8"))
+                self.assertGreater(len(al1["alerts"]), 0)
+                self.assertTrue(all(a["alert_id"] == "ALT-0001" for a in al1["alerts"]))
             with urlopen(f"{base}/api/logs/raw?file=uploaded_mixed.log&lines=5") as r:
                 raw_prev = json.loads(r.read().decode("utf-8"))
                 self.assertEqual(len(raw_prev["lines"]), 5)
@@ -301,9 +315,86 @@ class TestLateralMovementPipeline(unittest.TestCase):
                 ov2 = json.loads(r.read().decode("utf-8"))
                 self.assertEqual(ov2["split"]["split_mode"], "none")
                 self.assertEqual(ov2["parsed_events_count"], 5)
+
+            # 5. Cumulative Model Performance History endpoint (Tab 4)
+            with urlopen(f"{base}/api/model-history") as r:
+                hist = json.loads(r.read().decode("utf-8"))
+                self.assertEqual(hist["total_runs"], 2)
+                self.assertEqual(hist["evaluated_runs"], 2)
+                self.assertIsNotNone(hist["cumulative"])
+                self.assertIsNotNone(hist["macro_average"])
+                self.assertIn("accuracy", hist["cumulative"])
+                self.assertIn("fp", hist["cumulative"])
+
+            clr_req = Request(
+                f"{base}/api/model-history/clear",
+                data=b"{}",
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urlopen(clr_req) as r:
+                cleared = json.loads(r.read().decode("utf-8"))
+                self.assertEqual(cleared["total_runs"], 0)
+                self.assertIsNone(cleared["cumulative"])
         finally:
             server.shutdown()
             server.server_close()
+
+    def test_ml_only_window_expands_to_individual_events(self):
+        from src.api.web_server import query_alerts
+
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "alerts"), exist_ok=True)
+            cfg = load_config()
+            cfg["paths"]["processed_file"] = os.path.join(tmp, "clean_logs.csv")
+            cfg["paths"]["features_file"] = os.path.join(tmp, "feature_table.csv")
+            cfg["paths"]["ml_alerts_file"] = os.path.join(tmp, "alerts", "ml_alerts.csv")
+            cfg["paths"]["rule_alerts_file"] = os.path.join(tmp, "alerts", "alerts.csv")
+            cfg["paths"]["all_alerts_file"] = os.path.join(tmp, "alerts", "all_alerts.csv")
+            cfg["paths"]["user_risk_file"] = os.path.join(tmp, "alerts", "user_risk_scores.csv")
+
+            win = "2025-09-15 13:20:00"
+            raw_rows = [
+                {
+                    "timestamp": f"2025-09-15 13:20:{i:02d}",
+                    "user": "emp061",
+                    "host": "ws-061",
+                    "event_id": "4688",
+                    "logon_type": "",
+                    "source_ip": "10.0.1.61",
+                    "process_name": "whoami.exe" if i < 10 else "net.exe",
+                    "command_line": f"cmd_step_{i}",
+                    "log_source": "windows",
+                }
+                for i in range(20)
+            ]
+            pd.DataFrame(raw_rows).to_csv(cfg["paths"]["processed_file"], index=False)
+            pd.DataFrame([{"user": "emp061", "time_window": win, "action_count": 20}]).to_csv(
+                cfg["paths"]["features_file"], index=False
+            )
+            pd.DataFrame([{
+                "time_window": win,
+                "user": "emp061",
+                "host": "-",
+                "alert_type": "ML anomaly",
+                "details": "10m Window Anomaly: actions=20",
+                "severity": 0.99,
+            }]).to_csv(cfg["paths"]["ml_alerts_file"], index=False)
+            pd.DataFrame(columns=["time_window", "timestamp", "user", "host", "alert_type", "details", "severity"]).to_csv(
+                cfg["paths"]["rule_alerts_file"], index=False
+            )
+
+            merge_and_score_alerts(cfg)
+            risk_df = pd.read_csv(cfg["paths"]["user_risk_file"])
+            self.assertEqual(len(risk_df), 1)
+            self.assertEqual(risk_df.loc[0, "alert_id"], "ALT-0001")
+            self.assertEqual(int(risk_df.loc[0, "alert_count"]), 20)
+
+            session = SessionState(os.path.join(tmp, "session_raw"))
+            session.mark_results_ready(True)
+            rows = query_alerts(cfg, session, alert_id="ALT-0001", limit=200)
+            self.assertEqual(len(rows), 20)
+            self.assertFalse(any(r.get("alert_type") == "ML anomaly" for r in rows))
 
 
 if __name__ == "__main__":

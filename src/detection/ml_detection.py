@@ -9,17 +9,30 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import StandardScaler
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.config import load_config
-from src.ml.feature_engineering import NUMERIC_FEATURE_COLUMNS
 from src.utils.logger import get_logger
 
 logger = get_logger("ml_detection")
+
+# Leak-free per-window behavioral & security features (avoids static global-graph leakage and Day-1 new-host FPs)
+ML_FEATURE_COLUMNS = [
+    "action_count",
+    "unique_hosts",
+    "suspicious_process_count",
+    "num_source_ips",
+    "num_unique_commands",
+    "outside_work_hours",
+    "failed_login_count",
+    "failed_then_success",
+    "admin_share_count",
+    "sensitive_host_count",
+]
 
 
 def _load_feature_table(feature_csv: str) -> pd.DataFrame:
@@ -81,7 +94,7 @@ def train_and_predict_ml(
         logger.warning("Empty feature table; wrote 0 ML alerts.")
         return empty_df
 
-    feature_cols = [c for c in NUMERIC_FEATURE_COLUMNS if c in df.columns]
+    feature_cols = [c for c in ML_FEATURE_COLUMNS if c in df.columns]
     if not feature_cols:
         feature_cols = [
             c for c in ["action_count", "unique_hosts", "suspicious_process_count",
@@ -102,11 +115,18 @@ def train_and_predict_ml(
         X_scaled = scaler.transform(X_raw)
     else:
         logger.info("Training Isolation Forest on %d rows x %d features", len(X_raw), len(feature_cols))
-        scaler = RobustScaler()
+        scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X_raw)
         X_train = _subsample_rows(X_scaled, max_train, seed)
 
-        iso_forest = IsolationForest(contamination=contamination, random_state=seed, n_jobs=-1)
+        max_samp = min(2048, len(X_train)) if len(X_train) > 0 else "auto"
+        iso_forest = IsolationForest(
+            n_estimators=200,
+            max_samples=max_samp,
+            contamination=contamination,
+            random_state=seed,
+            n_jobs=-1,
+        )
         iso_forest.fit(X_train)
 
         joblib.dump(
@@ -122,7 +142,24 @@ def train_and_predict_ml(
     labels = iso_forest.predict(X_scaled)
     raw_decision = iso_forest.decision_function(X_scaled)
     norm_scores = _normalize_scores(raw_decision)
-    is_anomaly = labels == -1
+    # Require statistical outlier (-1) AND at least one lateral-movement/off-hours risk indicator
+    # to suppress benign daytime burst false positives under extreme class imbalance.
+    has_risk_signal = (
+        (df.get("unique_hosts", pd.Series(0, index=df.index)) >= 3)
+        | (df.get("suspicious_process_count", pd.Series(0, index=df.index)) > 0)
+        | (df.get("failed_login_count", pd.Series(0, index=df.index)) >= 2)
+        | (df.get("admin_share_count", pd.Series(0, index=df.index)) > 0)
+        | (df.get("sensitive_host_count", pd.Series(0, index=df.index)) > 0)
+        | (
+            (df.get("outside_work_hours", pd.Series(0, index=df.index)) == 1)
+            & (
+                (df.get("action_count", pd.Series(0, index=df.index)) >= 3)
+                | (df.get("unique_hosts", pd.Series(0, index=df.index)) >= 2)
+                | (df.get("num_source_ips", pd.Series(0, index=df.index)) >= 2)
+            )
+        )
+    )
+    is_anomaly = (labels == -1) & has_risk_signal.values
 
     anoms = df[is_anomaly].copy()
     anoms["ml_score"] = norm_scores[is_anomaly]
@@ -131,23 +168,27 @@ def train_and_predict_ml(
     alerts: List[Dict[str, Any]] = []
     for _, r in anoms.iterrows():
         dec = float(r["decision_score"])
-        sev = round(float(np.clip(0.35 + (-dec / 0.10) * 0.65, 0.35, 1.0)), 4)
-        details = {
-            "action_count": int(r.get("action_count", 0)),
-            "unique_hosts": int(r.get("unique_hosts", 0)),
-            "suspicious_process_count": int(r.get("suspicious_process_count", 0)),
-            "failed_login_count": int(r.get("failed_login_count", 0)),
-            "new_host_count": int(r.get("new_host_count", 0)),
-            "anomaly_score": round(float(r["ml_score"]), 4),
-            "decision_function": round(dec, 4),
-        }
+        ml_sc = float(r["ml_score"])
+        # Combine anomaly rank & raw margin so strong ML-only outliers reach MEDIUM (>=35 weighted score)
+        sev = round(float(np.clip(0.55 + 0.40 * ml_sc + (-dec / 0.15) * 0.05, 0.55, 1.0)), 4)
+        detail_str = (
+            f"10m Window Anomaly: actions={int(r.get('action_count', 0))}, "
+            f"hosts={int(r.get('unique_hosts', 0))}, "
+            f"susp_procs={int(r.get('suspicious_process_count', 0))}, "
+            f"cmds={int(r.get('num_unique_commands', 0))}, "
+            f"src_ips={int(r.get('num_source_ips', 0))}, "
+            f"failed_logins={int(r.get('failed_login_count', 0))}, "
+            f"off_hours={int(r.get('outside_work_hours', 0))}, "
+            f"sensitive_hits={int(r.get('sensitive_host_count', 0))} "
+            f"(score={float(r['ml_score']):.4f})"
+        )
         alerts.append({
             "time_window": r["time_window"],
             "user": r["user"],
             "alert_type": "ML anomaly",
             "anomaly_score": round(float(r["ml_score"]), 4),
             "severity": sev,
-            "details": str(details),
+            "details": detail_str,
         })
 
     alerts_df = pd.DataFrame(alerts, columns=cols)

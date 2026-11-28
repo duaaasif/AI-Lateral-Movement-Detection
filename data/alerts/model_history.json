@@ -1,0 +1,331 @@
+[
+  {
+    "run_id": "20261128_184506_080210",
+    "timestamp": "2026-11-28 18:45:06",
+    "mode": "train_and_test",
+    "source_files": [
+      "upload5.log"
+    ],
+    "total_events": 30360,
+    "evaluated_events": 9036,
+    "evaluated_windows": 7704,
+    "total_alerts": 442,
+    "rule_alerts": 429,
+    "ml_alerts": 13,
+    "eval_status": "evaluated",
+    "tp": 13,
+    "fp": 0,
+    "tn": 7691,
+    "fn": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "per_detector": {
+      "Rule-based": {
+        "tp": 10,
+        "fp": 0,
+        "tn": 7691,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.7692,
+        "f1": 0.8696,
+        "accuracy": 0.9996
+      },
+      "ML": {
+        "tp": 13,
+        "fp": 0,
+        "tn": 7691,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0
+      }
+    }
+  },
+  {
+    "run_id": "20261128_184909_203623",
+    "timestamp": "2026-11-28 18:49:09",
+    "mode": "train_and_test",
+    "source_files": [
+      "upload4.log"
+    ],
+    "total_events": 22360,
+    "evaluated_events": 6876,
+    "evaluated_windows": 6011,
+    "total_alerts": 444,
+    "rule_alerts": 431,
+    "ml_alerts": 13,
+    "eval_status": "evaluated",
+    "tp": 13,
+    "fp": 0,
+    "tn": 5998,
+    "fn": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "per_detector": {
+      "Rule-based": {
+        "tp": 10,
+        "fp": 0,
+        "tn": 5998,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.7692,
+        "f1": 0.8696,
+        "accuracy": 0.9995
+      },
+      "ML": {
+        "tp": 13,
+        "fp": 0,
+        "tn": 5998,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0
+      }
+    }
+  },
+  {
+    "run_id": "20261128_190328_062607",
+    "timestamp": "2026-11-28 19:03:28",
+    "mode": "test_only",
+    "source_files": [
+      "upload3_test.log"
+    ],
+    "total_events": 5723,
+    "evaluated_events": 5723,
+    "evaluated_windows": 5029,
+    "total_alerts": 441,
+    "rule_alerts": 428,
+    "ml_alerts": 13,
+    "eval_status": "evaluated",
+    "tp": 13,
+    "fp": 0,
+    "tn": 5016,
+    "fn": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "per_detector": {
+      "Rule-based": {
+        "tp": 10,
+        "fp": 0,
+        "tn": 5016,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.7692,
+        "f1": 0.8696,
+        "accuracy": 0.9994
+      },
+      "ML": {
+        "tp": 13,
+        "fp": 0,
+        "tn": 5016,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0
+      }
+    }
+  },
+  {
+    "run_id": "20261128_191647_775549",
+    "timestamp": "2026-11-28 19:16:47",
+    "mode": "test_only",
+    "source_files": [
+      "upload4_test.log"
+    ],
+    "total_events": 6876,
+    "evaluated_events": 6876,
+    "evaluated_windows": 6011,
+    "total_alerts": 444,
+    "rule_alerts": 431,
+    "ml_alerts": 13,
+    "eval_status": "evaluated",
+    "tp": 13,
+    "fp": 0,
+    "tn": 5998,
+    "fn": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "per_detector": {
+      "Rule-based": {
+        "tp": 10,
+        "fp": 0,
+        "tn": 5998,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.7692,
+        "f1": 0.8696,
+        "accuracy": 0.9995
+      },
+      "ML": {
+        "tp": 13,
+        "fp": 0,
+        "tn": 5998,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0
+      }
+    }
+  },
+  {
+    "run_id": "20261128_192703_235388",
+    "timestamp": "2026-11-28 19:27:03",
+    "mode": "test_only",
+    "source_files": [
+      "upload5_test.log"
+    ],
+    "total_events": 9036,
+    "evaluated_events": 9036,
+    "evaluated_windows": 7704,
+    "total_alerts": 442,
+    "rule_alerts": 429,
+    "ml_alerts": 13,
+    "eval_status": "evaluated",
+    "tp": 13,
+    "fp": 0,
+    "tn": 7691,
+    "fn": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "per_detector": {
+      "Rule-based": {
+        "tp": 10,
+        "fp": 0,
+        "tn": 7691,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.7692,
+        "f1": 0.8696,
+        "accuracy": 0.9996
+      },
+      "ML": {
+        "tp": 13,
+        "fp": 0,
+        "tn": 7691,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0
+      }
+    }
+  },
+  {
+    "run_id": "20261128_193206_056914",
+    "timestamp": "2026-11-28 19:32:06",
+    "mode": "test_only",
+    "source_files": [
+      "upload5_test.log"
+    ],
+    "total_events": 9036,
+    "evaluated_events": 9036,
+    "evaluated_windows": 7704,
+    "total_alerts": 442,
+    "rule_alerts": 429,
+    "ml_alerts": 13,
+    "eval_status": "evaluated",
+    "tp": 13,
+    "fp": 0,
+    "tn": 7691,
+    "fn": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "per_detector": {
+      "Rule-based": {
+        "tp": 10,
+        "fp": 0,
+        "tn": 7691,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.7692,
+        "f1": 0.8696,
+        "accuracy": 0.9996
+      },
+      "ML": {
+        "tp": 13,
+        "fp": 0,
+        "tn": 7691,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0
+      }
+    }
+  },
+  {
+    "run_id": "20261128_193729_548551",
+    "timestamp": "2026-11-28 19:37:29",
+    "mode": "test_only",
+    "source_files": [
+      "upload5_test.log"
+    ],
+    "total_events": 9036,
+    "evaluated_events": 9036,
+    "evaluated_windows": 7704,
+    "total_alerts": 442,
+    "rule_alerts": 429,
+    "ml_alerts": 13,
+    "eval_status": "evaluated",
+    "tp": 13,
+    "fp": 0,
+    "tn": 7691,
+    "fn": 0,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "per_detector": {
+      "Rule-based": {
+        "tp": 10,
+        "fp": 0,
+        "tn": 7691,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.7692,
+        "f1": 0.8696,
+        "accuracy": 0.9996
+      },
+      "ML": {
+        "tp": 13,
+        "fp": 0,
+        "tn": 7691,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0
+      }
+    }
+  }
+]

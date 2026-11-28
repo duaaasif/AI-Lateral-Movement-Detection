@@ -31,9 +31,15 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
     df["user_norm"] = df["user"].fillna("").astype(str).str.strip()
     df["host_norm"] = df["host"].fillna("").astype(str).str.strip()
     df["host_lower"] = df["host_norm"].str.lower()
-    df["proc_lower"] = df["process_name"].fillna("-").astype(str).str.lower()
-    df["cmd_str"] = df["command_line"].fillna("-").astype(str)
+    df["proc_str"] = df["process_name"].fillna("-").astype(str).replace("", "-")
+    df["proc_lower"] = df["proc_str"].str.lower()
+    df["cmd_str"] = df["command_line"].fillna("-").astype(str).replace("", "-")
     df["cmd_lower"] = df["cmd_str"].str.lower()
+    df["src_ip_str"] = (
+        df["source_ip"].fillna("-").astype(str).replace("", "-")
+        if "source_ip" in df.columns
+        else pd.Series("-", index=df.index)
+    )
     df["event_id"] = pd.to_numeric(df["event_id"], errors="coerce").fillna(0).astype(int)
 
     rules_cfg = cfg["rules"]
@@ -71,14 +77,25 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
     off_mask = (df["event_id"] == 4624) & ((df["timestamp"].dt.hour < wh_start) | (df["timestamp"].dt.hour >= wh_end))
     if off_mask.any():
         sub = df[off_mask]
-        details = "User logged in at " + sub["timestamp"].dt.strftime("%H:%M:%S") + f" (outside {wh_start:02d}:00-{wh_end:02d}:00)"
+        details = (
+            "Event 4624 [" + sub["proc_str"] + " | src=" + sub["src_ip_str"] + "] logon on "
+            + sub["host_norm"] + " at " + sub["timestamp"].dt.strftime("%H:%M:%S")
+            + f" (outside {wh_start:02d}:00-{wh_end:02d}:00)"
+        )
         alert_frames.append(_make_frame(sub, "Login outside working hours", details))
 
-    # Rule 3 (Vectorized, null-safe): Remote / suspicious process creation (4688)
-    proc_mask = (df["event_id"] == 4688) & df["proc_lower"].isin(suspicious_procs)
+    # Rule 3 (Vectorized, null-safe): Remote / suspicious process or command execution (4688)
+    linux_susp_regex = r"/etc/shadow|/tmp/\.persist\.sh|\bscp\b.*@"
+    proc_mask = (df["event_id"] == 4688) & (
+        df["proc_lower"].isin(suspicious_procs)
+        | df["cmd_lower"].str.contains(linux_susp_regex, regex=True, na=False)
+    )
     if proc_mask.any():
         sub = df[proc_mask]
-        details = "User ran " + sub["process_name"].fillna("-").astype(str) + ": " + sub["cmd_str"]
+        details = (
+            "Event 4688 [" + sub["proc_str"] + " | src=" + sub["src_ip_str"] + "] on "
+            + sub["host_norm"] + ": " + sub["cmd_str"]
+        )
         alert_frames.append(_make_frame(sub, "Remote process creation", details))
 
     # Rule 4 (Vectorized, config-driven): Unauthorized sensitive host access
@@ -92,7 +109,12 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
         ]
         if unauth_idx:
             sub = df.loc[unauth_idx]
-            details = "Unauthorized user '" + sub["user_norm"] + "' accessed sensitive host '" + sub["host_norm"] + "'"
+            cmd_part = np.where(sub["cmd_str"] != "-", " cmd: " + sub["cmd_str"], " (unauthorized host access)")
+            details = (
+                "Event " + sub["event_id"].astype(str)
+                + " [" + sub["proc_str"] + " | src=" + sub["src_ip_str"] + "] on "
+                + sub["host_norm"] + pd.Series(cmd_part, index=sub.index)
+            )
             alert_frames.append(_make_frame(sub, "Sensitive host access", details))
 
     # Rule 6 (Vectorized): Admin share / SMB lateral movement indicators
@@ -103,14 +125,21 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
     )
     if share_mask.any():
         sub = df[share_mask]
-        details = "Suspicious share/SMB activity: " + sub["cmd_str"]
+        share_act = np.where(
+            sub["cmd_str"] != "-",
+            "cmd: " + sub["cmd_str"],
+            "SMB network share access (C$/ADMIN$/IPC$) on " + sub["host_norm"],
+        )
+        details = (
+            "Event " + sub["event_id"].astype(str)
+            + " [" + sub["proc_str"] + " | src=" + sub["src_ip_str"] + "] "
+            + pd.Series(share_act, index=sub.index)
+        )
         alert_frames.append(_make_frame(sub, "Admin share access", details))
 
     # Rule 1 (Transition-filtered per user): Multiple hosts in short time
-    # Check only auth/process/share events and host transitions to avoid scanning identical repeats
     hop_candidates = df[df["event_id"].isin([4624, 4648, 4688, 5140])].sort_values(["user_norm", "timestamp"])
     if not hop_candidates.empty:
-        # Keep only rows where host changed compared to previous row for the same user
         prev_user = hop_candidates["user_norm"].shift(1)
         prev_host = hop_candidates["host_lower"].shift(1)
         trans = hop_candidates[(hop_candidates["user_norm"] != prev_user) | (hop_candidates["host_lower"] != prev_host)]
@@ -121,6 +150,10 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
             ts_arr = grp["timestamp"].values.astype("datetime64[ns]").astype("int64")
             h_arr = grp["host_norm"].values
             hl_arr = grp["host_lower"].values
+            eid_arr = grp["event_id"].values
+            proc_arr = grp["proc_str"].values
+            ip_arr = grp["src_ip_str"].values
+            cmd_arr = grp["cmd_str"].values
             u_low = user.lower()
             recent: List[tuple] = []
 
@@ -131,15 +164,16 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
                 cutoff = t_ns - multi_host_ns
                 recent = [(rh, rt) for rh, rt in recent if rt >= cutoff]
                 prev_hosts = {rh for rh, _ in recent if rh != h}
-                # Trigger when >=2 distinct prior hosts (3+ total hosts in 10 min) OR touching an unauthorized sensitive host after another host
                 is_unauth_sens = (hl in sensitive_hosts_set) and (u_low not in sensitive_map.get(hl, set()))
                 if len(prev_hosts) >= 2 or (len(prev_hosts) >= 1 and is_unauth_sens):
+                    c_val = str(cmd_arr[i])
+                    c_note = f" cmd: {c_val}" if c_val != "-" else ""
                     rule1_rows.append({
                         "timestamp": pd.Timestamp(t_ns),
                         "user": user,
                         "host": h,
                         "alert_type": "Multiple hosts in short time",
-                        "details": f"User accessed {h} after {sorted(prev_hosts)} within {rules_cfg['multi_host_window_minutes']} min",
+                        "details": f"Event {int(eid_arr[i])} [{proc_arr[i]} | src={ip_arr[i]}] hopped to {h} (after {sorted(prev_hosts)}){c_note}",
                         "severity": sev1,
                     })
                 recent.append((h, t_ns))
@@ -147,7 +181,7 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
         if rule1_rows:
             alert_frames.append(pd.DataFrame(rule1_rows, columns=ALERT_COLUMNS))
 
-    # Rule 5 (Filtered per user with >= fail_threshold 4625 events): Failed login burst before success
+    # Rule 5 (Emit each individual failed-login payload in the burst + succeeding logon payload)
     fail_counts = df[df["event_id"] == 4625].groupby("user_norm").size()
     burst_users = set(fail_counts[fail_counts >= fail_threshold].index)
     if burst_users:
@@ -158,22 +192,46 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
             ts_arr = grp["timestamp"].values.astype("datetime64[ns]").astype("int64")
             eid_arr = grp["event_id"].values
             h_arr = grp["host_norm"].values
-            recent_fails: List[int] = []
-            for t_ns, eid, h in zip(ts_arr, eid_arr, h_arr):
+            proc_arr = grp["proc_str"].values
+            ip_arr = grp["src_ip_str"].values
+            # Track tuples: (t_int, host, proc, src_ip) for every 4625 in active lookback window
+            recent_fails: List[tuple] = []
+            for t_ns, eid, h, proc, sip in zip(ts_arr, eid_arr, h_arr, proc_arr, ip_arr):
                 t_int = int(t_ns)
                 cutoff = t_int - fail_ns
+                recent_fails = [f for f in recent_fails if f[0] >= cutoff]
                 if eid == 4625:
-                    recent_fails = [ft for ft in recent_fails if ft >= cutoff]
-                    recent_fails.append(t_int)
+                    recent_fails.append((t_int, str(h), str(proc), str(sip)))
+                    if len(recent_fails) >= fail_threshold + 1:
+                        n_b = len(recent_fails)
+                        for idx_f, (ft, fh, fp, fip) in enumerate(recent_fails, start=1):
+                            rule5_rows.append({
+                                "timestamp": pd.Timestamp(ft),
+                                "user": user,
+                                "host": fh,
+                                "alert_type": "Failed login burst before success",
+                                "details": f"Event 4625 [{fp} | src={fip}] Failed logon attempt #{idx_f}/{n_b} on {fh}",
+                                "severity": sev5,
+                            })
+                        recent_fails = []
                 elif eid == 4624:
-                    recent_fails = [ft for ft in recent_fails if ft >= cutoff]
                     if len(recent_fails) >= fail_threshold:
+                        n_b = len(recent_fails)
+                        for idx_f, (ft, fh, fp, fip) in enumerate(recent_fails, start=1):
+                            rule5_rows.append({
+                                "timestamp": pd.Timestamp(ft),
+                                "user": user,
+                                "host": fh,
+                                "alert_type": "Failed login burst before success",
+                                "details": f"Event 4625 [{fp} | src={fip}] Failed logon attempt #{idx_f}/{n_b} on {fh} (before success)",
+                                "severity": sev5,
+                            })
                         rule5_rows.append({
                             "timestamp": pd.Timestamp(t_int),
                             "user": user,
                             "host": str(h),
                             "alert_type": "Failed login burst before success",
-                            "details": f"{len(recent_fails)} failed logins followed by successful logon",
+                            "details": f"Event 4624 [{proc} | src={sip}] Successful logon on {h} immediately after {n_b} failed attempts",
                             "severity": sev5,
                         })
                         recent_fails = []
@@ -184,7 +242,19 @@ def evaluate_rules(logs: pd.DataFrame, cfg: Dict[str, Any] | None = None) -> pd.
         return pd.DataFrame(columns=ALERT_COLUMNS)
 
     alerts_df = pd.concat(alert_frames, ignore_index=True)
-    alerts_df = alerts_df.sort_values("timestamp").reset_index(drop=True)
+    time_window = str(feat_cfg.get("time_window", "10min"))
+    alerts_df["timestamp"] = pd.to_datetime(alerts_df["timestamp"])
+    alerts_df["_tw"] = alerts_df["timestamp"].dt.floor(time_window)
+
+    # Require multi-event / multi-signal correlation within the 10-minute window
+    # (never raise an alert on an isolated single-event rule hit).
+    win_hits = alerts_df.groupby(["user", "_tw"], sort=False)["alert_type"].transform("size")
+    multi_event_rules = {"Multiple hosts in short time", "Failed login burst before success"}
+    alerts_df = alerts_df[(win_hits >= 2) | alerts_df["alert_type"].isin(multi_event_rules)].copy()
+    if alerts_df.empty:
+        return pd.DataFrame(columns=ALERT_COLUMNS)
+
+    alerts_df = alerts_df.drop(columns=["_tw"]).sort_values("timestamp").reset_index(drop=True)
     return alerts_df
 
 

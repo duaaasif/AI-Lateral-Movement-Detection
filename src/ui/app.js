@@ -52,6 +52,7 @@ const TAB_TITLES = {
   upload: ["Upload Raw Logs & Run Analysis", "Upload raw Windows/Linux .log files to automatically parse, split, train AI models, and inspect lateral movement graphs."],
   results: ["Detection Results & Visual Graphs", "Train/Test split summary, test-set lateral movement alerts, evaluation metrics, and generated charts."],
   logs: ["Raw & Parsed Log Explorer", "Inspect raw uploaded .log lines and query normalized parsed events."],
+  performance: ["Cumulative Model Performance", "Average Accuracy, F1, Precision, Recall, ROC-AUC, and Confusion Matrix totals across all tested log runs."],
 };
 
 function switchTab(tabId) {
@@ -62,6 +63,9 @@ function switchTab(tabId) {
   const [title, sub] = TAB_TITLES[tabId] || ["AegisLM", ""];
   document.getElementById("page-title").textContent = title;
   document.getElementById("page-subtitle").textContent = sub;
+  if (tabId === "performance") {
+    loadModelHistory().catch(() => {});
+  }
 }
 
 document.querySelectorAll(".nav-item").forEach((btn) => {
@@ -80,7 +84,7 @@ function renderUploadedFiles(files) {
   startBtn.disabled = files.length === 0;
 
   if (!files.length) {
-    list.innerHTML = `<li class="empty-row">No files uploaded yet. Ready-to-upload samples are in <code>data/upload_samples/*.log</code> and full 1M+ logs in <code>data/raw/*.log</code>.</li>`;
+    list.innerHTML = `<li class="empty-row">No files uploaded yet. Upload correlated lateral-movement logs from <code>data/uploads/</code> (<code>upload1.log</code>–<code>upload5.log</code> for Train &amp; Test, or <code>upload1_test.log</code>–<code>upload5_test.log</code> for Direct Test).</li>`;
     rawSel.innerHTML = "";
     document.getElementById("raw-log-preview").textContent = "Upload a .log file first to inspect its raw lines.";
     return;
@@ -247,6 +251,7 @@ async function pollJob() {
       await loadResults();
       await loadAlerts();
       await queryParsedLogs();
+      await loadModelHistory().catch(() => {});
       await previewRaw().catch(() => {});
       switchTab("results");
     }
@@ -313,21 +318,21 @@ async function loadResults() {
     testLabel.textContent = "Analysis Mode";
     document.getElementById("res-test-split").textContent = "Direct Test (No Split — Pre-trained Model)";
     document.getElementById("kpi-alerts-label").textContent = "Alerts Triggered";
-    document.getElementById("risk-table-title").textContent = "Prioritized Threat Windows";
-    document.getElementById("alert-feed-title").textContent = "Merged Alert Feed";
+    document.getElementById("risk-table-title").textContent = "1. Prioritized Alerts";
+    document.getElementById("alert-feed-title").textContent = "2. Individual Activity Evidence";
   } else {
     trainCard.style.display = "";
     testLabel.textContent = "Test Split";
     document.getElementById("res-train-split").textContent = `${fmtNum(sp.train_events || 0)} / ${fmtNum(totalEvents)}`;
     document.getElementById("res-test-split").textContent = `${fmtNum(sp.test_events || 0)} / ${fmtNum(totalEvents)}`;
     document.getElementById("kpi-alerts-label").textContent = "Test Alerts Triggered";
-    document.getElementById("risk-table-title").textContent = "Prioritized Test Threat Windows";
-    document.getElementById("alert-feed-title").textContent = "Test-Set Merged Alert Feed";
+    document.getElementById("risk-table-title").textContent = "1. Prioritized Alerts (Test Set)";
+    document.getElementById("alert-feed-title").textContent = "2. Individual Activity Evidence (Test Set)";
   }
 
-  document.getElementById("kpi-alerts").textContent = fmtNum(data.alert_summary.total);
+  document.getElementById("kpi-alerts").textContent = fmtNum((data.risk_scores || []).length);
   const critCount = (data.risk_scores || []).filter((r) => r.priority === "CRITICAL").length;
-  document.getElementById("kpi-critical-count").textContent = `${critCount} CRITICAL threat windows`;
+  document.getElementById("kpi-critical-count").textContent = `${critCount} CRITICAL | ${fmtNum(data.alert_summary.total)} activities`;
 
   const ens = data.evaluation?.ensemble_at_medium_threshold;
   if (ens) {
@@ -356,65 +361,138 @@ async function loadResults() {
         .join("")
     : `<div class="help-text">No visualization charts generated for this run.</div>`;
 
-  // Risk table
-  document.getElementById("risk-window-count").textContent = `${data.risk_scores.length} windows`;
+  // 1. Prioritized Alerts table (one alert per compromised 10-min window)
+  document.getElementById("risk-window-count").textContent = `${data.risk_scores.length} alerts`;
   document.getElementById("risk-table-body").innerHTML = data.risk_scores
     .map(
       (r) => `<tr>
+        <td><button class="btn-mini mono" onclick="filterByAlertId('${esc(r.alert_id)}')">${esc(r.alert_id || "—")}</button></td>
         <td><strong>${esc(r.user)}</strong></td>
         <td class="mono">${esc(r.time_window)}</td>
         <td><strong>${esc(r.risk_score)}</strong></td>
         <td><span class="badge badge-${esc(r.priority)}">${esc(r.priority)}</span></td>
         <td class="mono">${esc(r.detectors_triggered)}</td>
         <td>${esc(r.alert_count)}</td>
+        <td class="summary-cell">${esc(r.summary || "—")}</td>
       </tr>`
     )
     .join("");
 
-  // Detector breakdown
+  const alertIdFilter = document.getElementById("filter-alert-id");
+  const prevAlertId = alertIdFilter.value;
+  alertIdFilter.innerHTML =
+    `<option value="">All Alert IDs</option>` +
+    (data.risk_scores || [])
+      .filter((r) => r.alert_id)
+      .map((r) => `<option value="${esc(r.alert_id)}">${esc(r.alert_id)}</option>`)
+      .join("");
+  if ([...alertIdFilter.options].some((o) => o.value === prevAlertId)) {
+    alertIdFilter.value = prevAlertId;
+  }
+
+  // Detector breakdown (bars reflect alert volume share; text shows volume + TP/FP/FN metrics)
   const perDet = data.evaluation?.per_detector || {};
   const bySource = data.alert_summary.by_source || {};
+  const totalDetAlerts = (bySource["Rule-based"] || 0) + (bySource["ML"] || 0);
   document.getElementById("detector-breakdown").innerHTML = ["Rule-based", "ML"]
     .map((name) => {
       const cnt = bySource[name] || 0;
+      const sharePct = totalDetAlerts > 0 ? (cnt / totalDetAlerts) * 100 : 0;
+      const barWidth = cnt > 0 ? Math.max(2, Math.round(sharePct)) : 0;
       const m = perDet[name];
       const statsText = m
         ? `TP:${m.tp} FP:${m.fp} FN:${m.fn} | P:${Number(m.precision).toFixed(2)} R:${Number(m.recall).toFixed(2)} F1:${Number(m.f1).toFixed(2)}`
-        : `${fmtNum(cnt)} ${isDirectTest ? "alerts" : "alerts on Test split"}`;
-      const pct = m ? Math.round(Number(m.f1) * 100) : Math.min(100, cnt * 5);
+        : `${fmtNum(cnt)} ${isDirectTest ? "activities" : "activities on Test split"}`;
       return `<div class="breakdown-row">
         <div class="breakdown-top">
           <span>${esc(name)}</span>
-          <span class="mono">${fmtNum(cnt)} alerts — ${esc(statsText)}</span>
+          <span class="mono">${fmtNum(cnt)} activities (${sharePct.toFixed(1)}%) — ${esc(statsText)}</span>
         </div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${barWidth}%"></div></div>
       </div>`;
     })
     .join("");
 }
 
-async function loadAlerts() {
-  const qs = new URLSearchParams({
-    priority: document.getElementById("filter-priority").value,
-    source: document.getElementById("filter-source").value,
-    user: document.getElementById("filter-user").value,
-    limit: "200",
+window.filterByAlertId = async (alertId) => {
+  document.getElementById("filter-alert-id").value = alertId || "";
+  await loadAlerts();
+  document.getElementById("alert-feed-title").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+let currentAlertsData = [];
+let alertSortState = { key: "alert_id", dir: "asc" };
+
+function updateAlertSortHeaders() {
+  document.querySelectorAll("#alerts-table thead th.sortable-th").forEach((th) => {
+    const key = th.dataset.sortKey;
+    const ind = th.querySelector(".sort-ind");
+    if (key === alertSortState.key) {
+      th.classList.add("sort-active");
+      if (ind) ind.textContent = alertSortState.dir === "asc" ? "▲" : "▼";
+    } else {
+      th.classList.remove("sort-active");
+      if (ind) ind.textContent = "⇅";
+    }
   });
-  const data = await apiGet(`/api/alerts?${qs}`);
-  document.getElementById("alerts-table-body").innerHTML = (data.alerts || [])
+}
+
+function renderAlertsTable() {
+  updateAlertSortHeaders();
+  const { key, dir } = alertSortState;
+  const mult = dir === "asc" ? 1 : -1;
+  const sorted = [...currentAlertsData].sort((a, b) => {
+    const va = String(a[key] ?? "");
+    const vb = String(b[key] ?? "");
+    const cmp = va.localeCompare(vb, undefined, { numeric: true, sensitivity: "base" });
+    if (cmp !== 0) return cmp * mult;
+    if (key !== "alert_id") {
+      const ca = String(a.alert_id ?? "").localeCompare(String(b.alert_id ?? ""), undefined, { numeric: true });
+      if (ca !== 0) return ca;
+    }
+    return String(a.timestamp ?? "").localeCompare(String(b.timestamp ?? ""));
+  });
+
+  document.getElementById("alerts-table-body").innerHTML = sorted
     .map(
       (a) => `<tr>
+        <td class="mono"><span class="badge badge-neutral">${esc(a.alert_id || "—")}</span></td>
         <td class="mono">${esc(a.timestamp)}</td>
         <td><strong>${esc(a.user)}</strong></td>
         <td class="mono">${esc(a.host || "—")}</td>
         <td>${esc(a.source)}</td>
         <td>${esc(a.alert_type)}</td>
-        <td>${esc(a.risk_score)}</td>
-        <td><span class="badge badge-${esc(a.priority)}">${esc(a.priority)}</span></td>
         <td class="mono">${esc(a.details)}</td>
       </tr>`
     )
     .join("");
+}
+
+document.querySelectorAll("#alerts-table thead th.sortable-th").forEach((th) => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sortKey;
+    if (!key) return;
+    if (alertSortState.key === key) {
+      alertSortState.dir = alertSortState.dir === "asc" ? "desc" : "asc";
+    } else {
+      alertSortState.key = key;
+      alertSortState.dir = "asc";
+    }
+    renderAlertsTable();
+  });
+});
+updateAlertSortHeaders();
+
+async function loadAlerts() {
+  const qs = new URLSearchParams({
+    alert_id: document.getElementById("filter-alert-id").value,
+    source: document.getElementById("filter-source").value,
+    user: document.getElementById("filter-user").value,
+    limit: "5000",
+  });
+  const data = await apiGet(`/api/alerts?${qs}`);
+  currentAlertsData = data.alerts || [];
+  renderAlertsTable();
 }
 
 async function previewRaw() {
@@ -455,6 +533,116 @@ window.openChartModal = (src) => {
 document.getElementById("modal-close-btn").onclick = () => document.getElementById("chart-modal").classList.remove("open");
 document.getElementById("modal-close-bg").onclick = () => document.getElementById("chart-modal").classList.remove("open");
 
+async function loadModelHistory() {
+  const data = await apiGet("/api/model-history");
+  const emptyEl = document.getElementById("perf-empty-state");
+  const contentEl = document.getElementById("perf-content");
+
+  if (!data.total_runs) {
+    emptyEl.style.display = "block";
+    contentEl.style.display = "none";
+    return;
+  }
+
+  emptyEl.style.display = "none";
+  contentEl.style.display = "block";
+
+  document.getElementById("perf-total-runs").textContent = fmtNum(data.total_runs);
+  document.getElementById("perf-eval-runs").textContent = `${fmtNum(data.evaluated_runs)} evaluated with ground truth${data.unlabeled_runs ? ` (${fmtNum(data.unlabeled_runs)} unlabeled)` : ""}`;
+  document.getElementById("perf-total-events").textContent = fmtNum(data.total_events);
+  document.getElementById("perf-total-windows").textContent = `${fmtNum(data.total_evaluated_windows)} evaluated feature windows`;
+  document.getElementById("perf-total-alerts").textContent = fmtNum(data.total_alerts);
+  document.getElementById("perf-alert-split").textContent = `Rule: ${fmtNum(data.total_rule_alerts)} | ML: ${fmtNum(data.total_ml_alerts)}`;
+
+  const cum = data.cumulative;
+  const mac = data.macro_average;
+  if (cum) {
+    document.getElementById("perf-accuracy").textContent = `${(Number(cum.accuracy) * 100).toFixed(2)}%`;
+    document.getElementById("perf-macro-accuracy").textContent = mac ? `Run Avg: ${(Number(mac.accuracy) * 100).toFixed(2)}% across ${data.evaluated_runs} run(s)` : "Pooled across windows";
+    document.getElementById("perf-f1").textContent = Number(cum.f1).toFixed(3);
+    document.getElementById("perf-macro-f1").textContent = mac ? `Run Avg F1: ${Number(mac.f1).toFixed(3)}` : "Pooled F1";
+    document.getElementById("perf-prec-rec").textContent = `${Number(cum.precision).toFixed(3)} / ${Number(cum.recall).toFixed(3)}`;
+    document.getElementById("perf-macro-prec-rec").textContent = mac ? `Run Avg: P ${Number(mac.precision).toFixed(3)} | R ${Number(mac.recall).toFixed(3)}` : "Precision / Recall";
+    const aucStr = mac && mac.roc_auc != null ? `${Number(mac.roc_auc).toFixed(3)} / ${Number(mac.pr_auc ?? 0).toFixed(3)}` : "N/A";
+    document.getElementById("perf-auc").textContent = aucStr;
+    document.getElementById("perf-fpr-fnr").textContent = `FPR: ${(Number(cum.fpr) * 100).toFixed(3)}% | FNR: ${(Number(cum.fnr) * 100).toFixed(2)}%`;
+
+    document.getElementById("perf-cm-windows").textContent = `${fmtNum(cum.total_windows)} windows`;
+    document.getElementById("perf-tp").textContent = fmtNum(cum.tp);
+    document.getElementById("perf-fp").textContent = fmtNum(cum.fp);
+    document.getElementById("perf-fn").textContent = fmtNum(cum.fn);
+    document.getElementById("perf-tn").textContent = fmtNum(cum.tn);
+  } else {
+    document.getElementById("perf-accuracy").textContent = "Unlabeled";
+    document.getElementById("perf-macro-accuracy").textContent = "No ground-truth runs yet";
+    document.getElementById("perf-f1").textContent = "Unlabeled";
+    document.getElementById("perf-macro-f1").textContent = "Upload runs with ground truth";
+    document.getElementById("perf-prec-rec").textContent = "—";
+    document.getElementById("perf-macro-prec-rec").textContent = "—";
+    document.getElementById("perf-auc").textContent = "N/A";
+    document.getElementById("perf-fpr-fnr").textContent = "FPR: — | FNR: —";
+    document.getElementById("perf-cm-windows").textContent = "0 evaluated";
+    document.getElementById("perf-tp").textContent = "0";
+    document.getElementById("perf-fp").textContent = "0";
+    document.getElementById("perf-fn").textContent = "0";
+    document.getElementById("perf-tn").textContent = "0";
+  }
+
+  const perDet = data.per_detector || {};
+  document.getElementById("perf-detector-breakdown").innerHTML = ["Rule-based", "ML"]
+    .map((name) => {
+      const m = perDet[name];
+      if (!m) {
+        return `<div class="breakdown-row">
+          <div class="breakdown-top">
+            <span>${esc(name)}</span>
+            <span class="mono">No evaluated runs yet</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:0%"></div></div>
+        </div>`;
+      }
+      const pct = Math.round(Number(m.f1) * 100);
+      return `<div class="breakdown-row">
+        <div class="breakdown-top">
+          <span>${esc(name)}</span>
+          <span class="mono">TP:${fmtNum(m.tp)} FP:${fmtNum(m.fp)} FN:${fmtNum(m.fn)} | Acc:${(Number(m.accuracy) * 100).toFixed(2)}% P:${Number(m.precision).toFixed(3)} R:${Number(m.recall).toFixed(3)} F1:${Number(m.f1).toFixed(3)}</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    })
+    .join("");
+
+  document.getElementById("perf-history-body").innerHTML = (data.runs || [])
+    .map((r) => {
+      const isEval = r.eval_status === "evaluated";
+      const modeLabel = r.mode === "test_only" ? "Direct Test" : "Train + Test";
+      const filesText = (r.source_files || []).join(", ") || "—";
+      return `<tr>
+        <td class="mono">${esc(r.timestamp)}</td>
+        <td class="mono">${esc(filesText)}</td>
+        <td><span class="badge badge-neutral">${esc(modeLabel)}</span></td>
+        <td>${fmtNum(r.total_events)}</td>
+        <td>${fmtNum(r.evaluated_windows)}</td>
+        <td>${isEval ? (Number(r.accuracy) * 100).toFixed(2) + "%" : '<span class="badge badge-neutral">Unlabeled</span>'}</td>
+        <td>${isEval ? Number(r.precision).toFixed(3) : "—"}</td>
+        <td>${isEval ? Number(r.recall).toFixed(3) : "—"}</td>
+        <td><strong>${isEval ? Number(r.f1).toFixed(3) : "—"}</strong></td>
+        <td class="mono">${isEval ? `${fmtNum(r.tp)} / ${fmtNum(r.fp)} / ${fmtNum(r.fn)} / ${fmtNum(r.tn)}` : "—"}</td>
+        <td>${isEval && r.roc_auc != null ? Number(r.roc_auc).toFixed(3) : "—"}</td>
+      </tr>`;
+    })
+    .join("");
+}
+
+document.getElementById("btn-clear-history").onclick = async () => {
+  try {
+    await apiPost("/api/model-history/clear", {});
+    await loadModelHistory();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
 document.getElementById("btn-apply-alert-filters").onclick = loadAlerts;
 document.getElementById("btn-preview-raw").onclick = previewRaw;
 document.getElementById("btn-query-parsed").onclick = queryParsedLogs;
@@ -464,6 +652,7 @@ async function init() {
   const sess = await apiGet("/api/session");
   renderUploadedFiles(sess.uploaded_files || []);
   await loadResults();
+  await loadModelHistory().catch(() => {});
   if (sess.has_results) {
     await loadAlerts();
     await queryParsedLogs();

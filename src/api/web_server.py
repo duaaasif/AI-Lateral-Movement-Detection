@@ -21,6 +21,7 @@ if BASE_DIR not in sys.path:
 
 from src.api.scoring_server import score_events
 from src.config import load_config
+from src.utils.evaluate import clear_model_history, load_model_history, summarize_model_history
 from src.utils.logger import get_logger
 
 logger = get_logger("web_server")
@@ -226,9 +227,88 @@ def get_overview_payload(cfg: Dict[str, Any], session: SessionState) -> Dict[str
     }
 
 
+def _expand_ml_window_events(
+    cfg: Dict[str, Any],
+    filtered_df: pd.DataFrame,
+    time_window_freq: str = "10min",
+) -> List[Dict[str, Any]]:
+    """Expand ML alert windows with their individual event payloads from clean_logs.csv."""
+    proc_path = cfg["paths"]["processed_file"]
+    if not os.path.exists(proc_path) or filtered_df.empty:
+        return []
+
+    ml_rows = filtered_df[filtered_df["source"].astype(str) == "ML"]
+    if ml_rows.empty:
+        return []
+
+    # Map (user, floored_10min_str) -> metadata dict
+    target_windows: Dict[tuple, Dict[str, Any]] = {}
+    for _, r in ml_rows.iterrows():
+        tw_ts = pd.to_datetime(r.get("time_window"), errors="coerce")
+        if pd.isna(tw_ts):
+            continue
+        tw_str = tw_ts.floor(time_window_freq).strftime("%Y-%m-%d %H:%M:%S")
+        key = (str(r.get("user", "")).strip(), tw_str)
+        target_windows[key] = {
+            "alert_id": str(r.get("alert_id", "")),
+            "risk_score": r.get("risk_score", 0.0),
+            "priority": str(r.get("priority", "MEDIUM")),
+            "detectors_triggered": str(r.get("detectors_triggered", "ML")),
+            "time_window": tw_str,
+        }
+    if not target_windows:
+        return []
+
+    target_users = {k[0] for k in target_windows}
+    expanded: List[Dict[str, Any]] = []
+    with open(proc_path, "r", encoding="utf-8", errors="replace", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            usr = (row.get("user") or "").strip()
+            if usr not in target_users:
+                continue
+            ts_raw = row.get("timestamp") or ""
+            # Fast floor to 10-min string ("YYYY-MM-DD HH:M0:00") for standard formatted timestamps
+            if len(ts_raw) >= 16 and ts_raw[4] == "-" and ts_raw[13] == ":":
+                tw_str = f"{ts_raw[:15]}0:00"
+            else:
+                ts_dt = pd.to_datetime(ts_raw, errors="coerce")
+                if pd.isna(ts_dt):
+                    continue
+                tw_str = ts_dt.floor(time_window_freq).strftime("%Y-%m-%d %H:%M:%S")
+            meta = target_windows.get((usr, tw_str))
+            if meta is None:
+                continue
+            eid = row.get("event_id") or "-"
+            proc = (row.get("process_name") or "-").strip() or "-"
+            cmd = (row.get("command_line") or "-").strip() or "-"
+            src_ip = (row.get("source_ip") or "-").strip() or "-"
+            host = (row.get("host") or "-").strip() or "-"
+            lsrc = (row.get("log_source") or "log").strip()
+            ltype = (row.get("logon_type") or "").strip()
+            ltype_part = f" | logon={ltype}" if ltype and ltype != "-" else ""
+            detail = f"Event {eid} [{proc} | src={src_ip}{ltype_part}] on {host}" + (f": {cmd}" if cmd != "-" else "")
+            expanded.append({
+                "alert_id": meta["alert_id"],
+                "time_window": meta["time_window"],
+                "timestamp": ts_raw,
+                "user": usr,
+                "host": host,
+                "alert_type": f"Event {eid} ({lsrc})",
+                "details": detail,
+                "source": "ML",
+                "severity": "",
+                "risk_score": meta["risk_score"],
+                "priority": meta["priority"],
+                "detectors_triggered": meta["detectors_triggered"],
+            })
+    return expanded
+
+
 def query_alerts(
     cfg: Dict[str, Any],
     session: SessionState,
+    alert_id: str = "",
     priority: str = "",
     source: str = "",
     user: str = "",
@@ -239,18 +319,35 @@ def query_alerts(
     path = cfg["paths"]["all_alerts_file"]
     if not os.path.exists(path):
         return []
-    df = pd.read_csv(path, low_memory=False)
-    if df.empty:
+    all_df = pd.read_csv(path, low_memory=False)
+    if all_df.empty:
         return []
+    df = all_df.copy()
+    if alert_id and "alert_id" in df.columns:
+        df = df[df["alert_id"].astype(str).str.upper() == alert_id.strip().upper()]
     if priority and "priority" in df.columns:
         df = df[df["priority"].astype(str).str.upper() == priority.upper()]
     if source and "source" in df.columns:
         df = df[df["source"].astype(str).str.lower() == source.lower()]
     if user:
         df = df[df["user"].astype(str).str.lower().str.contains(user.lower(), na=False)]
-    if "risk_score" in df.columns:
+
+    # Replace consolidated ML window summary rows with their individual event payloads from clean_logs.csv
+    if not source or source.lower() == "ml":
+        tw_freq = str(cfg.get("features", {}).get("time_window", "10min"))
+        extra = _expand_ml_window_events(cfg, df, time_window_freq=tw_freq)
+        if extra:
+            expanded_ids = {str(r.get("alert_id", "")) for r in extra if r.get("alert_id")}
+            drop_mask = (df["source"].astype(str) == "ML") & (
+                df.get("alert_id", pd.Series("", index=df.index)).astype(str).isin(expanded_ids)
+            )
+            df = pd.concat([df[~drop_mask], pd.DataFrame(extra)], ignore_index=True)
+
+    if "alert_id" in df.columns:
+        df = df.sort_values(["alert_id", "timestamp"], ascending=[True, True])
+    elif "risk_score" in df.columns:
         df = df.sort_values(["risk_score", "timestamp"], ascending=[False, False])
-    return df.head(max(1, min(limit, 1000))).fillna("").to_dict(orient="records")
+    return df.head(max(1, min(limit, 5000))).fillna("").to_dict(orient="records")
 
 
 def preview_session_raw_file(session: SessionState, filename: str, lines: int = 40) -> Dict[str, Any]:
@@ -357,7 +454,7 @@ def make_web_handler(
                 elif path == "/health":
                     self._send_json(200, {"status": "ok"})
                 elif path == "/api/session":
-                    samples_dir = os.path.join(cfg["base_dir"], "data", "upload_samples")
+                    samples_dir = os.path.join(cfg["base_dir"], "data", "uploads")
                     samples = []
                     if os.path.isdir(samples_dir):
                         for name in sorted(os.listdir(samples_dir)):
@@ -379,6 +476,7 @@ def make_web_handler(
                     rows = query_alerts(
                         cfg,
                         session,
+                        alert_id=qs.get("alert_id", [""])[0],
                         priority=qs.get("priority", [""])[0],
                         source=qs.get("source", [""])[0],
                         user=qs.get("user", [""])[0],
@@ -408,6 +506,8 @@ def make_web_handler(
                     self._send_file(fpath, "image/png")
                 elif path == "/api/jobs/status":
                     self._send_json(200, jobs.snapshot())
+                elif path == "/api/model-history":
+                    self._send_json(200, summarize_model_history(load_model_history(cfg)))
                 else:
                     self._send_json(404, {"error": f"Unknown endpoint: {path}"})
             except FileNotFoundError as exc:
@@ -525,6 +625,11 @@ def make_web_handler(
                         self._send_json(409, {"error": "Another job is already running."})
                         return
                     self._send_json(202, {"started": True, "mode": mode, "job": jobs.snapshot()})
+                elif path == "/api/model-history/clear":
+                    if jobs.snapshot()["status"] == "running":
+                        self._send_json(409, {"error": "Cannot clear history while a job is running."})
+                        return
+                    self._send_json(200, clear_model_history(cfg))
                 elif path == "/api/tests/run":
                     cmd = [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"]
                     started = jobs.start_subprocess("Automated Test Suite", cmd)

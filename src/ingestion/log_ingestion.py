@@ -393,7 +393,11 @@ def _parse_csv_file(filepath: str, chunk_size: int = 250_000) -> List[pd.DataFra
     return chunks
 
 
-def ingest_logs(raw_dir: str | None = None, output_file: str | None = None) -> pd.DataFrame:
+def ingest_logs(
+    raw_dir: str | None = None,
+    output_file: str | None = None,
+    include_files: List[str] | None = None,
+) -> pd.DataFrame:
     """Parse Windows + Linux raw logs (.log/.jsonl/.csv) into a normalized readable CSV."""
     cfg = load_config()
     raw_path = raw_dir or cfg["paths"]["raw_dir"]
@@ -402,6 +406,7 @@ def ingest_logs(raw_dir: str | None = None, output_file: str | None = None) -> p
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     raw_files = sorted(glob(os.path.join(raw_path, "*")))
+    allowed = {f.lower() for f in include_files} if include_files else None
     all_chunks: List[pd.DataFrame] = []
 
     for filepath in raw_files:
@@ -409,6 +414,8 @@ def ingest_logs(raw_dir: str | None = None, output_file: str | None = None) -> p
             continue
         fname = os.path.basename(filepath).lower()
         if fname.startswith("ground_truth"):
+            continue
+        if allowed is not None and fname not in allowed:
             continue
 
         if fname.endswith((".log", ".jsonl", ".ndjson", ".txt")):

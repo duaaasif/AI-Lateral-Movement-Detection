@@ -19,7 +19,7 @@ from src.detection.rule_based_detection import run_rule_detection
 from src.ingestion.generate_synthetic_logs import generate_raw_dataset
 from src.ingestion.log_ingestion import ingest_logs
 from src.ml.feature_engineering import build_features
-from src.utils.evaluate import evaluate_detections
+from src.utils.evaluate import evaluate_detections, record_model_run
 from src.utils.logger import get_logger
 from src.utils.visualize_alerts import generate_visualizations
 
@@ -128,7 +128,20 @@ def run_pipeline(
         generate_raw_dataset(raw_dir=active_raw, total_events=total_events, days=days)
 
     logger.info("[Step 1] Parsing Raw Logs -> Readable Format")
-    logs_df = ingest_logs(raw_dir=active_raw)
+    include_files = None
+    has_raw_logs = os.path.isdir(active_raw) and any(
+        f.lower().endswith((".log", ".jsonl", ".ndjson", ".csv", ".txt"))
+        and not f.lower().startswith("ground_truth")
+        for f in os.listdir(active_raw)
+    )
+    if not has_raw_logs and raw_dir is None:
+        uploads_dir = os.path.join(cfg["base_dir"], "data", "uploads")
+        if os.path.isdir(uploads_dir):
+            active_raw = uploads_dir
+            default_upload = "upload5.log" if os.path.isfile(os.path.join(uploads_dir, "upload5.log")) else None
+            if default_upload:
+                include_files = [default_upload]
+    logs_df = ingest_logs(raw_dir=active_raw, include_files=include_files)
     if logs_df.empty:
         raise ValueError(f"No valid log events found in {active_raw}")
 
@@ -197,6 +210,29 @@ def run_pipeline(
     if not skip_viz:
         logger.info("[Step 8] Generating Visualizations")
         charts_count = generate_visualizations()
+
+    allowed_src = {f.lower() for f in include_files} if include_files else None
+    source_files = sorted(
+        f
+        for f in os.listdir(active_raw)
+        if os.path.isfile(os.path.join(active_raw, f))
+        and not f.lower().startswith("ground_truth")
+        and f.lower().endswith((".log", ".jsonl", ".ndjson", ".csv", ".txt"))
+        and (allowed_src is None or f.lower() in allowed_src)
+    ) if os.path.isdir(active_raw) else []
+    run_mode = "train_and_test" if (use_train_test_split and len(logs_df) >= 4) else "test_only"
+    record_model_run(
+        cfg,
+        mode=run_mode,
+        source_files=source_files,
+        total_events=len(logs_df),
+        evaluated_events=split_info.get("test_events", len(logs_df)),
+        evaluated_windows=eval_report.get("total_windows", len(feat_df)),
+        total_alerts=len(merged_df),
+        rule_alerts=len(rule_df),
+        ml_alerts=len(ml_df),
+        eval_report=eval_report,
+    )
 
     summary = {
         "raw_events": len(logs_df),

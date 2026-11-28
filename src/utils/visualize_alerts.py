@@ -41,6 +41,11 @@ def generate_visualizations(
 
     df["time_window"] = pd.to_datetime(df["time_window"])
     df["timestamp"] = pd.to_datetime(df["timestamp"])
+    if "alert_id" in df.columns and df["alert_id"].notna().all() and (df["alert_id"].astype(str).str.strip() != "").all():
+        df["_alert_key"] = df["alert_id"].astype(str)
+    else:
+        df["_alert_key"] = df["user"].astype(str) + "|" + df["time_window"].astype(str)
+    alerts_unique = df.drop_duplicates(subset=["_alert_key"]).copy()
     generated = 0
 
     def _annotate_bars(ax, bars) -> None:
@@ -55,9 +60,9 @@ def generate_visualizations(
                 fontweight="bold",
             )
 
-    # 1. Alerts per User (dynamic palette for any number of users)
+    # 1. Alerts per User (distinct consolidated alerts)
     fig, ax = plt.subplots(figsize=(10, 6))
-    user_counts = df["user"].value_counts()
+    user_counts = alerts_unique["user"].value_counts()
     palette = plt.cm.tab10.colors
     bar_colors = [palette[i % len(palette)] for i in range(len(user_counts))]
     bars = ax.bar(user_counts.index.astype(str), user_counts.values, color=bar_colors)
@@ -71,8 +76,8 @@ def generate_visualizations(
     plt.close()
     generated += 1
 
-    # 2. Alerts per Host
-    host_df = df[df["host"].notna() & (df["host"].astype(str).str.strip() != "")]
+    # 2. Alerts per Host (unique alert_id per host)
+    host_df = df[df["host"].notna() & (df["host"].astype(str).str.strip() != "")].drop_duplicates(subset=["_alert_key", "host"])
     if not host_df.empty:
         fig, ax = plt.subplots(figsize=(10, 6))
         host_counts = host_df["host"].value_counts()
@@ -87,9 +92,9 @@ def generate_visualizations(
         plt.close()
         generated += 1
 
-    # 3. Alerts Over Time
+    # 3. Alerts Over Time (distinct alerts per 10-min window)
     fig, ax = plt.subplots(figsize=(14, 6))
-    time_counts = df.sort_values("time_window").groupby("time_window").size()
+    time_counts = alerts_unique.sort_values("time_window").groupby("time_window").size()
     ax.plot(time_counts.index, time_counts.values, marker="o", linewidth=2, markersize=6, color="#FF6B6B")
     ax.fill_between(time_counts.index, time_counts.values, alpha=0.25, color="#FF6B6B")
     ax.set_xlabel("Time Window", fontsize=12, fontweight="bold")
@@ -101,9 +106,9 @@ def generate_visualizations(
     plt.close()
     generated += 1
 
-    # 4. Alert Type Distribution
+    # 4. Alert Type Distribution (distinct alerts triggering each tactic)
     fig, ax = plt.subplots(figsize=(10, 6))
-    type_counts = df["alert_type"].value_counts()
+    type_counts = df.drop_duplicates(subset=["_alert_key", "alert_type"])["alert_type"].value_counts()
     type_colors = [palette[i % len(palette)] for i in range(len(type_counts))]
     bars = ax.bar(type_counts.index.astype(str), type_counts.values, color=type_colors)
     ax.set_xlabel("Alert Type", fontsize=12, fontweight="bold")
@@ -116,9 +121,9 @@ def generate_visualizations(
     plt.close()
     generated += 1
 
-    # 5. Detector Comparison (Rule-based, ML, GNN, Sequence)
+    # 5. Detector Comparison (Rule-based vs ML unique alerts detected)
     fig, ax = plt.subplots(figsize=(9, 6))
-    source_counts = df["source"].value_counts()
+    source_counts = df.groupby("source")["_alert_key"].nunique().sort_values(ascending=False)
     src_colors = [palette[i % len(palette)] for i in range(len(source_counts))]
     bars = ax.bar(source_counts.index.astype(str), source_counts.values, color=src_colors)
     ax.set_xlabel("Detection Method", fontsize=12, fontweight="bold")
@@ -130,10 +135,10 @@ def generate_visualizations(
     plt.close()
     generated += 1
 
-    # 6. User Activity Timeline (dynamic colors)
+    # 6. User Alert Timeline (distinct alerts per user over time)
     fig, ax = plt.subplots(figsize=(14, 6))
-    for i, user in enumerate(sorted(df["user"].astype(str).unique())):
-        u_df = df[df["user"].astype(str) == user].sort_values("time_window")
+    for i, user in enumerate(sorted(alerts_unique["user"].astype(str).unique())):
+        u_df = alerts_unique[alerts_unique["user"].astype(str) == user].sort_values("time_window")
         u_counts = u_df.groupby("time_window").size()
         ax.plot(
             u_counts.index,
@@ -154,11 +159,11 @@ def generate_visualizations(
     plt.close()
     generated += 1
 
-    # 7. Priority Distribution (if ensemble priority exists)
-    if "priority" in df.columns:
+    # 7. Priority Distribution (distinct consolidated alerts per priority)
+    if "priority" in alerts_unique.columns:
         fig, ax = plt.subplots(figsize=(8, 5))
         prio_order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
-        prio_counts = df["priority"].value_counts().reindex(prio_order, fill_value=0)
+        prio_counts = alerts_unique["priority"].value_counts().reindex(prio_order, fill_value=0)
         prio_colors = ["#D62828", "#F77F00", "#FCBF49", "#4ECDC4"]
         bars = ax.bar(prio_counts.index, prio_counts.values, color=prio_colors)
         ax.set_xlabel("Priority", fontsize=12, fontweight="bold")

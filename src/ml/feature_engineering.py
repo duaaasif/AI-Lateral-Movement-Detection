@@ -56,7 +56,11 @@ def build_features(
     wh_end = int(feat_cfg["work_hours_end"])
     suspicious_procs = {p.lower() for p in feat_cfg["suspicious_processes"]}
     admin_keywords = [k.lower() for k in feat_cfg["admin_share_keywords"]]
-    sensitive_hosts = {h.lower() for h in cfg["rules"]["sensitive_hosts"].keys()}
+    sensitive_map = {
+        h.lower(): {u.lower() for u in users}
+        for h, users in cfg["rules"]["sensitive_hosts"].items()
+    }
+    sensitive_hosts = set(sensitive_map.keys())
 
     logger.info("Loading cleaned logs from %s", in_path)
     df = pd.read_csv(in_path, low_memory=False)
@@ -73,13 +77,27 @@ def build_features(
     df["process_lower"] = df["process_name"].fillna("-").astype(str).str.lower()
     df["cmd_str"] = df["command_line"].fillna("-").astype(str)
     df["cmd_lower"] = df["cmd_str"].str.lower()
-    df["host_lower"] = df["host"].fillna("").astype(str).str.lower()
+    df["user_lower"] = df["user"].fillna("").astype(str).str.strip().str.lower()
+    df["host_lower"] = df["host"].fillna("").astype(str).str.strip().str.lower()
 
-    # Precompute vectorized binary event flags
-    df["is_susp_proc"] = df["process_lower"].isin(suspicious_procs).astype(np.int8)
+    # Precompute vectorized binary event flags (Windows + Linux suspicious commands, unauthorized sensitive host access)
+    linux_susp_regex = r"/etc/shadow|/tmp/\.persist\.sh|\bscp\b.*@"
+    df["is_susp_proc"] = (
+        df["process_lower"].isin(suspicious_procs)
+        | df["cmd_lower"].str.contains(linux_susp_regex, regex=True, na=False)
+    ).astype(np.int8)
     df["is_outside"] = ((df["timestamp"].dt.hour < wh_start) | (df["timestamp"].dt.hour >= wh_end)).astype(np.int8)
     df["is_failed"] = (df["event_id"] == 4625).astype(np.int8)
-    df["is_sensitive"] = df["host_lower"].isin(sensitive_hosts).astype(np.int8)
+    is_sens_host = df["host_lower"].isin(sensitive_hosts)
+    unauth_sens = np.zeros(len(df), dtype=np.int8)
+    if is_sens_host.any():
+        idx_sens = np.flatnonzero(is_sens_host.values)
+        u_vals = df["user_lower"].values
+        h_vals = df["host_lower"].values
+        for pos in idx_sens:
+            if u_vals[pos] not in sensitive_map[h_vals[pos]]:
+                unauth_sens[pos] = 1
+    df["is_sensitive"] = unauth_sens
 
     admin_regex = "|".join(re.escape(kw) for kw in admin_keywords)
     df["is_admin_share"] = (
@@ -168,21 +186,25 @@ def build_features(
         feature_table = feature_table.merge(gt, on=["user", "time_window"], how="left")
         feature_table["is_attack"] = feature_table["is_attack"].fillna(0).astype(int)
     elif gt_path:
-        candidate_gts = [gt_path]
-        sample_gt = os.path.join(cfg["base_dir"], "data", "upload_samples", "ground_truth_samples.csv")
-        if os.path.exists(sample_gt):
-            candidate_gts.append(sample_gt)
-        gt_frames = []
-        for gpath in candidate_gts:
+        min_tw = feature_table["time_window"].min()
+        max_tw = feature_table["time_window"].max()
+        sample_gt = os.path.join(os.path.dirname(gt_path), "ground_truth_samples.csv")
+        chosen_gt = None
+        for gpath in [gt_path, sample_gt]:
             if os.path.exists(gpath):
+                if gpath == sample_gt and max_tw > pd.Timestamp("2025-11-17"):
+                    continue
                 gt_raw = pd.read_csv(gpath)
                 if not gt_raw.empty and {"user", "time_window", "is_attack"}.issubset(gt_raw.columns):
                     gt_raw["time_window"] = pd.to_datetime(gt_raw["time_window"]).dt.floor(time_window)
-                    gt_frames.append(gt_raw[["user", "time_window", "is_attack"]])
-        if gt_frames:
-            gt_all = pd.concat(gt_frames, ignore_index=True)
+                    # Only attach ground truth whose attack windows fall inside this dataset's timeline
+                    in_range = gt_raw[(gt_raw["time_window"] >= min_tw) & (gt_raw["time_window"] <= max_tw)]
+                    if not in_range.empty:
+                        chosen_gt = in_range[["user", "time_window", "is_attack"]]
+                        break
+        if chosen_gt is not None:
             gt_clean = (
-                gt_all.groupby(["user", "time_window"], sort=False)["is_attack"]
+                chosen_gt.groupby(["user", "time_window"], sort=False)["is_attack"]
                 .max()
                 .reset_index(name="is_attack")
             )

@@ -33,6 +33,9 @@
         <button class="nav-item" data-tab="logs" id="nav-logs">
           <span class="nav-step">3</span> Log Explorer
         </button>
+        <button class="nav-item" data-tab="performance" id="nav-performance">
+          <span class="nav-step">4</span> Model Performance
+        </button>
       </nav>
 
       <div class="sidebar-footer">
@@ -96,7 +99,7 @@
           <div class="queued-section">
             <h3>Uploaded Session Files</h3>
             <ul class="file-list" id="uploaded-files-list">
-              <li class="empty-row">No files uploaded yet. Ready-to-upload samples are available in <code>data/upload_samples/*.log</code> and full 1M+ logs in <code>data/raw/*.log</code>.</li>
+              <li class="empty-row">No files uploaded yet. Upload correlated lateral-movement logs from <code>data/uploads/</code> (<code>upload1.log</code>–<code>upload5.log</code> for Train &amp; Test, or <code>upload1_test.log</code>–<code>upload5_test.log</code> for Direct Test).</li>
             </ul>
           </div>
 
@@ -199,23 +202,25 @@
             <div class="charts-grid" id="charts-grid"></div>
           </div>
 
-          <!-- Prioritized Windows + Detector Breakdown -->
-          <div class="two-col">
+          <!-- 1. Prioritized Alerts + Detector Breakdown -->
+          <div class="two-col two-col-wide-left">
             <div class="card">
               <div class="card-header">
-                <h2 id="risk-table-title">Prioritized Test Threat Windows</h2>
-                <span class="badge badge-neutral" id="risk-window-count">0 windows</span>
+                <h2 id="risk-table-title">1. Prioritized Alerts (Test Set)</h2>
+                <span class="badge badge-neutral" id="risk-window-count">0 alerts</span>
               </div>
               <div class="table-wrap">
                 <table class="data-table">
                   <thead>
                     <tr>
+                      <th>Alert ID</th>
                       <th>User</th>
                       <th>Time Window</th>
                       <th>Risk Score</th>
                       <th>Priority</th>
                       <th>Detectors</th>
-                      <th>Alerts</th>
+                      <th>Activities</th>
+                      <th>Collective Action Summary</th>
                     </tr>
                   </thead>
                   <tbody id="risk-table-body"></tbody>
@@ -231,17 +236,13 @@
             </div>
           </div>
 
-          <!-- Alert Feed -->
+          <!-- 2. Individual Activity Evidence -->
           <div class="card">
             <div class="card-header">
-              <h2 id="alert-feed-title">Test-Set Merged Alert Feed</h2>
+              <h2 id="alert-feed-title">2. Individual Activity Evidence (Test Set)</h2>
               <div class="filter-bar">
-                <select id="filter-priority" class="input">
-                  <option value="">All Priorities</option>
-                  <option value="CRITICAL">CRITICAL</option>
-                  <option value="HIGH">HIGH</option>
-                  <option value="MEDIUM">MEDIUM</option>
-                  <option value="LOW">LOW</option>
+                <select id="filter-alert-id" class="input">
+                  <option value="">All Alert IDs</option>
                 </select>
                 <select id="filter-source" class="input">
                   <option value="">All Detectors</option>
@@ -253,17 +254,16 @@
               </div>
             </div>
             <div class="table-wrap tall">
-              <table class="data-table">
+              <table class="data-table" id="alerts-table">
                 <thead>
                   <tr>
-                    <th>Timestamp</th>
-                    <th>User</th>
-                    <th>Host</th>
-                    <th>Detector</th>
-                    <th>Alert Type</th>
-                    <th>Risk</th>
-                    <th>Priority</th>
-                    <th>Details</th>
+                    <th class="sortable-th" data-sort-key="alert_id">Alert ID <span class="sort-ind"></span></th>
+                    <th class="sortable-th" data-sort-key="timestamp">Timestamp <span class="sort-ind"></span></th>
+                    <th class="sortable-th" data-sort-key="user">User <span class="sort-ind"></span></th>
+                    <th class="sortable-th" data-sort-key="host">Host <span class="sort-ind"></span></th>
+                    <th class="sortable-th" data-sort-key="source">Detector <span class="sort-ind"></span></th>
+                    <th class="sortable-th" data-sort-key="alert_type">Activity / Trigger <span class="sort-ind"></span></th>
+                    <th class="sortable-th" data-sort-key="details">Details <span class="sort-ind"></span></th>
                   </tr>
                 </thead>
                 <tbody id="alerts-table-body"></tbody>
@@ -323,6 +323,126 @@
               </thead>
               <tbody id="parsed-logs-body"></tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: CUMULATIVE MODEL PERFORMANCE HISTORY -->
+      <section class="tab-panel" id="tab-performance">
+        <div class="empty-state-card card" id="perf-empty-state">
+          <h2>No Cumulative History Yet</h2>
+          <p class="help-text">Run one or more log files on the <strong>Upload &amp; Run</strong> tab to track cumulative Accuracy, F1, Precision, Recall, and Confusion Matrix totals across all runs.</p>
+        </div>
+
+        <div id="perf-content" style="display:none;">
+          <!-- Cumulative Totals Banner -->
+          <div class="split-banner card">
+            <div class="split-banner-item">
+              <div class="kpi-label">Total Runs Tested</div>
+              <div class="split-banner-val" id="perf-total-runs">0</div>
+              <div class="kpi-foot" id="perf-eval-runs">0 evaluated with ground truth</div>
+            </div>
+            <div class="split-banner-item">
+              <div class="kpi-label">Cumulative Events Tested</div>
+              <div class="split-banner-val accent-cyan" id="perf-total-events">0</div>
+              <div class="kpi-foot" id="perf-total-windows">0 evaluated feature windows</div>
+            </div>
+            <div class="split-banner-item">
+              <div class="kpi-label">Cumulative Alerts Triggered</div>
+              <div class="split-banner-val accent-green" id="perf-total-alerts">0</div>
+              <div class="kpi-foot" id="perf-alert-split">Rule: 0 | ML: 0</div>
+            </div>
+          </div>
+
+          <!-- Cumulative KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Cumulative Accuracy</div>
+              <div class="kpi-value accent-green" id="perf-accuracy">—</div>
+              <div class="kpi-foot" id="perf-macro-accuracy">Macro Avg: —</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Cumulative F1 Score</div>
+              <div class="kpi-value accent-cyan" id="perf-f1">—</div>
+              <div class="kpi-foot" id="perf-macro-f1">Macro Avg: —</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Cumulative Precision / Recall</div>
+              <div class="kpi-value" id="perf-prec-rec">—</div>
+              <div class="kpi-foot" id="perf-macro-prec-rec">Macro Avg: —</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Avg ROC-AUC / PR-AUC</div>
+              <div class="kpi-value" id="perf-auc">—</div>
+              <div class="kpi-foot" id="perf-fpr-fnr">FPR: — | FNR: —</div>
+            </div>
+          </div>
+
+          <!-- Confusion Matrix + Detector Breakdown -->
+          <div class="two-col">
+            <div class="card">
+              <div class="card-header">
+                <h2>Cumulative Confusion Matrix Totals</h2>
+                <span class="badge badge-neutral" id="perf-cm-windows">0 windows</span>
+              </div>
+              <div class="kpi-grid" style="margin-bottom:0;">
+                <div class="kpi-card">
+                  <div class="kpi-label">True Positives (TP)</div>
+                  <div class="kpi-value accent-green" id="perf-tp">0</div>
+                  <div class="kpi-foot">Attacks correctly caught</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">False Positives (FP)</div>
+                  <div class="kpi-value" id="perf-fp">0</div>
+                  <div class="kpi-foot">Benign flagged as threat</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">False Negatives (FN)</div>
+                  <div class="kpi-value" id="perf-fn">0</div>
+                  <div class="kpi-foot">Missed attack windows</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">True Negatives (TN)</div>
+                  <div class="kpi-value" id="perf-tn">0</div>
+                  <div class="kpi-foot">Benign correctly cleared</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2>Cumulative Per-Detector Performance</h2>
+              </div>
+              <div id="perf-detector-breakdown" class="breakdown-list"></div>
+            </div>
+          </div>
+
+          <!-- Historical Runs Table -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Run-by-Run Evaluation Record</h2>
+              <button class="btn btn-secondary" id="btn-clear-history">Clear History</button>
+            </div>
+            <div class="table-wrap tall">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Files Tested</th>
+                    <th>Mode</th>
+                    <th>Events</th>
+                    <th>Windows</th>
+                    <th>Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1</th>
+                    <th>TP / FP / FN / TN</th>
+                    <th>ROC-AUC</th>
+                  </tr>
+                </thead>
+                <tbody id="perf-history-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

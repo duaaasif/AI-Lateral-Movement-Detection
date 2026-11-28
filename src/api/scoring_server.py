@@ -83,18 +83,29 @@ def score_events(events: List[Dict[str, Any]], cfg: Dict[str, Any] | None = None
         wh_end = int(feat_cfg["work_hours_end"])
         susp_procs = {p.lower() for p in feat_cfg["suspicious_processes"]}
         admin_kws = [k.lower() for k in feat_cfg["admin_share_keywords"]]
-        sens_hosts = {h.lower() for h in cfg["rules"]["sensitive_hosts"].keys()}
+        sens_map = {
+            h.lower(): {u.lower() for u in users}
+            for h, users in cfg["rules"]["sensitive_hosts"].items()
+        }
+        sens_hosts = set(sens_map.keys())
 
         work = df.copy()
         work["time_window"] = work["timestamp"].dt.floor(tw)
+        work["user_lower"] = work["user"].astype(str).str.strip().str.lower()
         work["proc_lower"] = work["process_name"].str.lower()
         work["cmd_lower"] = work["command_line"].str.lower()
-        work["host_lower"] = work["host"].astype(str).str.lower()
-        work["is_susp"] = work["proc_lower"].isin(susp_procs).astype(int)
+        work["host_lower"] = work["host"].astype(str).str.strip().str.lower()
+        work["is_susp"] = (
+            work["proc_lower"].isin(susp_procs)
+            | work["cmd_lower"].str.contains(r"/etc/shadow|/tmp/\.persist\.sh|\bscp\b.*@", regex=True, na=False)
+        ).astype(int)
         work["is_outside"] = ((work["timestamp"].dt.hour < wh_start) | (work["timestamp"].dt.hour >= wh_end)).astype(int)
         work["is_fail"] = (work["event_id"] == 4625).astype(int)
         work["is_admin"] = work["cmd_lower"].apply(lambda c: 1 if any(k in c for k in admin_kws) else 0)
-        work["is_sens"] = work["host_lower"].isin(sens_hosts).astype(int)
+        work["is_sens"] = [
+            1 if (h in sens_hosts and u not in sens_map[h]) else 0
+            for u, h in zip(work["user_lower"], work["host_lower"])
+        ]
 
         graph_df = extract_graph_features(work, time_window=tw, sensitive_hosts=sens_hosts)
 
